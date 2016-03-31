@@ -128,7 +128,7 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
     private void onClickCameraSwitch()
     {
     	try {
-    		if( recording == true )
+    		if( recording == true && session != null )
         	{
     			session.stopPublisher();
                 session.stop();

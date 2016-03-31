@@ -1,8 +1,12 @@
 package com.streamcrop.livebroadcast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -13,8 +17,9 @@ public class SettingActivity extends Activity {
 	TextView 	m_txtResolution = null;
 	TextView 	m_txtFrameRate = null;
 	TextView 	m_txtBitRate = null;
+	List<Camera.Size> camerasize = new ArrayList<Camera.Size>(); 
 	
-    @Override
+	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     
@@ -38,6 +43,14 @@ public class SettingActivity extends Activity {
     	m_txtResolution.setText(videoQuality.resX + "x" + videoQuality.resY);
     	m_txtFrameRate.setText(videoQuality.framerate + "frame/s" );
     	m_txtBitRate.setText("" + (videoQuality.bitrate / 1000.0f));
+    	
+    	Camera camera=Camera.open();
+    	Camera.Parameters parameters=camera.getParameters();
+    	for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
+    		camerasize.add(size);
+	    }
+    	
+    	camera.release();
     }
     
     private void initEvents()
@@ -69,13 +82,10 @@ public class SettingActivity extends Activity {
     
     private void onClickVideoResolutioin()
     {
-    	final int [] resX = {320, 640, 960, 1280};
-    	final int [] resY = {240, 480, 720, 960};
-    	
-		String [] items = new String[resX.length];
+		String [] items = new String[camerasize.size()];
 		for(int i = 0; i < items.length; i++)
 		{
-			items[i] = resX[i] + "x" + resY[i];
+			items[i] = camerasize.get(i).width + "x" + camerasize.get(i).height;
 		}
 		
 		AlertDialog.Builder dialog = new AlertDialog.Builder(this);
@@ -83,8 +93,8 @@ public class SettingActivity extends Activity {
 		dialog.setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener() {			
 			public void onClick(DialogInterface dialog, int whichButton) {
 				VideoQuality videoQuality = new VideoQuality();
-				videoQuality.resX = resX[whichButton];
-				videoQuality.resY = resY[whichButton];
+				videoQuality.resX = camerasize.get(whichButton).width;
+				videoQuality.resY = camerasize.get(whichButton).height;
 				SessionBuilder.getInstance().setVideoQuality(videoQuality);
 				
 				m_txtResolution.setText(videoQuality.resX + "x" + videoQuality.resY);
@@ -157,4 +167,8 @@ public class SettingActivity extends Activity {
 		alertDialog.setCanceledOnTouchOutside(true);
     }
     
+	protected void onResume( ) {
+		
+		super.onResume();
+	}
 }
