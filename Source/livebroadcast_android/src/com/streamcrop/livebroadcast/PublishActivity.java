@@ -35,8 +35,19 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
 		
 		if( bundle != null )
 		{
-			m_Server = bundle.getString("server", "178.62.32.245");
-			m_AppName = bundle.getString("appname", "hls");
+			String server = bundle.getString("server", "178.62.32.245/hls"); 
+			
+			int index = server.indexOf("/");
+			if( index >= 0 )
+			{
+				m_Server = server.substring(0, index);
+				m_AppName = server.substring(index + 1);
+			}
+			else
+			{
+				m_Server = server + "";
+				m_AppName = "hls";
+			}
 			m_Channel = bundle.getString("channel", "jyy1");
 		}
         
@@ -69,7 +80,7 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
                     }
                 }
             }
-        });
+        });        
     }
 
     @Override
@@ -86,6 +97,7 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
                     .setHost(m_Server)
                     .setAppName(m_AppName).build();
             ;
+            startStop.performClick();
         } catch (Exception e) {
             Log.e(TAG, "Can't build session", e);
         }
