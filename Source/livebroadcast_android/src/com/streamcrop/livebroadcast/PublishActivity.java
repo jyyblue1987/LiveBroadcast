@@ -1,6 +1,9 @@
 package com.streamcrop.livebroadcast;
 
+import java.io.IOException;
+
 import android.app.Activity;
+import android.hardware.Camera.CameraInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -8,13 +11,18 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import tv.inhand.capture.SessionBuilder;
+import android.widget.ImageView;
 import tv.inhand.capture.Session;
+import tv.inhand.capture.SessionBuilder;
 
 public class PublishActivity extends Activity implements SurfaceHolder.Callback {
     private static final String TAG = "JCameara";
 
+    private ImageView m_imgCameraSwitch;
+    private ImageView m_imgCameraSetting;
+    
     private Button startStop;
+    
     private Session session;
     private SurfaceView surfaceview;
     private SurfaceHolder surfaceHolder;
@@ -27,11 +35,25 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
     public void onCreate(Bundle savedInstanceState) {  
         super.onCreate(savedInstanceState);  
         setContentView(R.layout.layout_publish);
-        surfaceview = (SurfaceView) this.findViewById(R.id.surfaceview);
-        surfaceHolder = surfaceview.getHolder();
-        
-        
-		Bundle bundle = getIntent().getExtras();
+       
+        findViews();
+        initData();
+        initEvents();
+    }
+
+    protected void findViews()
+    {
+    	 surfaceview = (SurfaceView) this.findViewById(R.id.surfaceview);
+         surfaceHolder = surfaceview.getHolder();
+         startStop = (Button) this.findViewById(R.id.start);
+         
+         m_imgCameraSwitch = (ImageView) findViewById(R.id.img_camera_switch);
+         m_imgCameraSetting = (ImageView) findViewById(R.id.img_camera_setting);
+    }
+    
+    protected void initData()
+    {
+    	Bundle bundle = getIntent().getExtras();
 		
 		if( bundle != null )
 		{
@@ -54,35 +76,80 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
         surfaceHolder.addCallback(this);
         // We still need this line for backward compatibility reasons with android 2
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-
-        startStop = (Button) this.findViewById(R.id.start);
-        startStop.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Button btn = (Button)v;
-                if (!recording) {
-                    try {
-                        session = SessionBuilder.getInstance().build();
-                        session.startPublisher(m_Channel);
-                        session.start();
-                        recording = true;
-                        btn.setText("Stop");;
-                    } catch (Exception e) {
-                        Log.e(TAG, "video session", e);
-                    }
-                }
-                else {
-                    if (session != null) {
-                        session.stopPublisher();
-                        session.stop();
-                        recording = false;
-                        btn.setText("Start");
-                    }
-                }
-            }
-        });        
     }
-
+    
+    protected void initEvents()
+    {
+    	 startStop.setOnClickListener(new OnClickListener() {
+             @Override
+             public void onClick(View v) {
+                 Button btn = (Button)v;
+                 if (!recording) {
+                     try {
+                         session = SessionBuilder.getInstance().build();
+                         session.startPublisher(m_Channel);
+                         session.start();
+                         recording = true;
+                         btn.setText("Stop");
+                     } catch (Exception e) {
+                         Log.e(TAG, "video session", e);
+                     }
+                 }
+                 else {
+                     if (session != null) {
+                         session.stopPublisher();
+                         session.stop();
+                         recording = false;
+                         btn.setText("Publish");
+                     }
+                 }
+             }
+         });     
+    	 
+    	 m_imgCameraSwitch.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				onClickCameraSwitch();				
+			}
+		});
+    }
+    
+    private void onClickCameraSwitch()
+    {
+    	try {
+    		if( recording == true )
+        	{
+    			session.stopPublisher();
+                session.stop();
+                
+                surfaceview.postDelayed(new Runnable() {
+					
+					@Override
+					public void run() {
+						runOnUiThread(new Runnable() {
+			                @Override
+			                public void run() {
+			                	int camera = SessionBuilder.getInstance().getCamera();
+						    	if( camera == CameraInfo.CAMERA_FACING_BACK)
+						    		SessionBuilder.getInstance().setCamera(CameraInfo.CAMERA_FACING_FRONT);
+						    	else
+						    		SessionBuilder.getInstance().setCamera(CameraInfo.CAMERA_FACING_BACK);
+						    	
+						    	recording = false;
+						    	startStop.performClick();
+			                }
+			            });												
+					}
+				}, 3000);
+                
+        		
+        	}	
+    	} catch(Exception e){
+    		e.printStackTrace();
+    	}
+    	
+    }
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
     }
