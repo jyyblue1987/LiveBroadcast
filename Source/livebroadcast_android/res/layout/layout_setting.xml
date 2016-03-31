@@ -3,14 +3,28 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
     >
- 
+ 	<TextView
+ 	    android:layout_width="match_parent"
+ 	    android:layout_height="wrap_content"
+ 	    android:gravity="center"
+ 	    android:text="Settings" 
+ 	    android:textSize="30sp"
+ 	    android:padding="5dip"
+ 	    />
+ 	<LinearLayout
+ 	    android:layout_width="match_parent"
+ 	    android:layout_height="2dip"
+ 	    android:background="#777777" 
+ 	    >
+ 	    
+ 	</LinearLayout>
     <LinearLayout
         android:id="@+id/lay_resolution"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" 
+        android:orientation="horizontal"
+        android:layout_marginTop="50dip" 
         android:layout_marginLeft="50dip"
         android:gravity="center_vertical"
         android:clickable="true"
@@ -21,6 +35,7 @@
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:clickable="false"
+	        android:textSize="20sp"
 	        android:text="Resolution" />
 
 	    <TextView
@@ -29,6 +44,7 @@
 	        android:layout_height="wrap_content"
 	        android:layout_marginLeft="10dip"
 	        android:clickable="false"
+	        android:textSize="20sp"
 	        android:text="640*480" />
     
     </LinearLayout>
@@ -47,6 +63,7 @@
 	        android:id="@+id/lbl_framerate"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
+	        android:textSize="20sp"
 	        android:text="Frame rate" />
 
 	    <TextView
@@ -54,6 +71,7 @@
 	        android:layout_width="200dip"
 	        android:layout_height="wrap_content"
 	        android:layout_marginLeft="10dip"
+	        android:textSize="20sp"
 	        android:text="15frame/s"
 	        />    
     </LinearLayout>
@@ -74,6 +92,7 @@
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:clickable="false"
+	        android:textSize="20sp"
 	        android:text="Bit rate " />
 
 	    <TextView
@@ -82,6 +101,7 @@
 	        android:layout_height="wrap_content"
 	        android:layout_marginLeft="10dip"
 	        android:clickable="false"
+	        android:textSize="20sp"
 	        android:text="1"
 	        />    
 	    <TextView
@@ -89,6 +109,7 @@
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:clickable="false"
+	        android:textSize="20sp"
 	        android:text="Kbps/s" />
 	    
     </LinearLayout>
