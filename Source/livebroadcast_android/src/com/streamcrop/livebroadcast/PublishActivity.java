@@ -3,6 +3,7 @@ package com.streamcrop.livebroadcast;
 import java.io.IOException;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.hardware.Camera.CameraInfo;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,7 +32,7 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
     String m_Server = "178.62.32.245";
     String m_AppName = "hls";
     String m_Channel = "jyy1";
-  
+    
     public void onCreate(Bundle savedInstanceState) {  
         super.onCreate(savedInstanceState);  
         setContentView(R.layout.layout_publish);
@@ -76,19 +77,21 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
         surfaceHolder.addCallback(this);
         // We still need this line for backward compatibility reasons with android 2
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        
+        recording = true;
+        startStop.setText("Stop");
     }
     
     protected void initEvents()
     {
+    	ResourceUtils.addClickEffect(startStop);
     	 startStop.setOnClickListener(new OnClickListener() {
              @Override
              public void onClick(View v) {
                  Button btn = (Button)v;
                  if (!recording) {
                      try {
-                         session = SessionBuilder.getInstance().build();
-                         session.startPublisher(m_Channel);
-                         session.start();
+                    	 startPublish();
                          recording = true;
                          btn.setText("Stop");
                      } catch (Exception e) {
@@ -97,8 +100,7 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
                  }
                  else {
                      if (session != null) {
-                         session.stopPublisher();
-                         session.stop();
+                    	 stopPublish();
                          recording = false;
                          btn.setText("Publish");
                      }
@@ -111,6 +113,14 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
 			@Override
 			public void onClick(View v) {
 				onClickCameraSwitch();				
+			}
+		});
+    	 
+    	 m_imgCameraSetting.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				onClickCameraSetting();
 			}
 		});
     }
@@ -141,7 +151,7 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
 			                }
 			            });												
 					}
-				}, 3000);
+				}, 1000);
                 
         		
         	}	
@@ -150,6 +160,41 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
     	}
     	
     }
+    
+    private void onClickCameraSetting()
+    {
+    	Intent intent = new Intent(this, SettingActivity.class);
+       
+        startActivity(intent);    
+    }
+    
+    private void startPublish()
+    {
+    	try {
+			session = SessionBuilder.getInstance().build();
+			session.startPublisher(m_Channel);
+	        session.start();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
+    
+    private void stopPublish()
+    {
+    	if( session == null )
+    		return;
+    	
+		session.stopPublisher();
+		session.stop();
+    }
+	
+	protected void onPause( ) {
+		stopPublish();
+        
+		super.onPause();
+	}
+	
+    
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
     }
@@ -163,8 +208,8 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
                     .setSurfaceHolder(surfaceHolder)
                     .setHost(m_Server)
                     .setAppName(m_AppName).build();
-            ;
-            startStop.performClick();
+            startPublish();
+            
         } catch (Exception e) {
             Log.e(TAG, "Can't build session", e);
         }

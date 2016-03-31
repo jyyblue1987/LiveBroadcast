@@ -1,0 +1,96 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/surface_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    >
+ 
+    <LinearLayout
+        android:id="@+id/lay_resolution"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" 
+        android:layout_marginLeft="50dip"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        >
+
+	    <TextView
+	        android:id="@+id/lbl_resolution"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:clickable="false"
+	        android:text="Resolution" />
+
+	    <TextView
+	        android:id="@+id/txt_resolution"
+	        android:layout_width="200dip"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="10dip"
+	        android:clickable="false"
+	        android:text="640*480" />
+    
+    </LinearLayout>
+   
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dip"
+        android:layout_marginLeft="50dip" 
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        >
+
+	    <TextView
+	        android:id="@+id/lbl_framerate"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Frame rate" />
+
+	    <TextView
+	        android:id="@+id/txt_framerate"
+	        android:layout_width="200dip"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="10dip"
+	        android:text="15frame/s"
+	        />    
+    </LinearLayout>
+    
+    <LinearLayout
+        android:id="@+id/lay_bitrate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="20dip" 
+        android:layout_marginLeft="50dip"
+        android:clickable="true"
+        android:gravity="center_vertical"
+        >
+
+	    <TextView
+	        android:id="@+id/lbl_bitrate"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:clickable="false"
+	        android:text="Bit rate " />
+
+	    <TextView
+	        android:id="@+id/txt_bitrate"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="10dip"
+	        android:clickable="false"
+	        android:text="1"
+	        />    
+	    <TextView
+	        android:id="@+id/lbl_unit"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:clickable="false"
+	        android:text="Kbps/s" />
+	    
+    </LinearLayout>
+    
+</LinearLayout>
