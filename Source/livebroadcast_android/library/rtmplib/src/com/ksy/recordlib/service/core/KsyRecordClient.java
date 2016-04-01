@@ -18,6 +18,7 @@ import com.ksy.recordlib.service.util.Constants;
 import com.ksy.recordlib.service.util.NetworkMonitor;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,6 +40,8 @@ public class KsyRecordClient implements KsyRecord {
 
     private KsyRecordSender ksyRecordSender;
     private int			   mCameraOrient = 90;
+    
+    public static List<Camera.Size> mSupportedPreviewSizes = new ArrayList<Camera.Size>();
 
     private STATE clientState = STATE.STOP;
 
@@ -149,7 +152,7 @@ public class KsyRecordClient implements KsyRecord {
             }
             mCamera.setDisplayOrientation(mCameraOrient);
             Camera.Parameters parameters = mCamera.getParameters();
-            List<Camera.Size> mSupportedPreviewSizes = parameters.getSupportedPreviewSizes();
+            mSupportedPreviewSizes = parameters.getSupportedPreviewSizes();
             Camera.Size optimalSize = CameraHelper.getOptimalPreviewSize(mSupportedPreviewSizes,
                     mSurfaceView.getHeight(), mSurfaceView.getWidth());
             ViewGroup.LayoutParams params = mSurfaceView.getLayoutParams();

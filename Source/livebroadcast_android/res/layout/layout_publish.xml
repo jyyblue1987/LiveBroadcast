@@ -29,7 +29,7 @@
         android:layout_height="50dip"
         android:layout_gravity="right"
         android:background="@drawable/camera_setting" />
-     <Button  
+    <Button  
         android:id="@+id/start"  
         android:layout_width="100dip"  
         android:layout_height="100dip"  
@@ -38,5 +38,6 @@
         android:text="Publish"
         android:textColor="#FFFFFF" 
         />
+    
 
 </FrameLayout> 

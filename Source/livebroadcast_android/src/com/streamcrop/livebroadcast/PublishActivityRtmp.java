@@ -2,6 +2,7 @@ package com.streamcrop.livebroadcast;
 
 import com.ksy.recordlib.service.core.KsyRecordClient;
 import com.ksy.recordlib.service.core.KsyRecordClientConfig;
+import com.ksy.recordlib.service.core.KsyRecordSender;
 import com.ksy.recordlib.service.exception.KsyRecordException;
 import com.ksy.recordlib.service.util.Constants;
 
@@ -191,7 +192,10 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     {
     	Intent intent = new Intent(this, SettingActivity.class);
        
-        startActivity(intent);    
+        startActivity(intent); 
+        
+        KsyRecordSender sender = KsyRecordSender.getRecordInstance();
+        sender.getAVBitrate();
     }
     
 	@Override

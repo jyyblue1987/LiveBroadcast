@@ -52,17 +52,13 @@ public class SettingActivity extends Activity {
     	m_txtVideoBitRate.setText("" + (config.getVideoBitRate() / 1000) + "Kbps");
     	m_txtAudioBitRate.setText("" + (config.getAudioBitRate() / 1000) + "Kbps");
     	
-//    	try {
-//    		Camera camera=Camera.open();
-//        	Camera.Parameters parameters=camera.getParameters();
-//        	for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
-//        		camerasize.add(size);
-//    	    }
-//        	
-//        	camera.release();
-//    	} catch(Exception e) {
-//    		e.printStackTrace();
-//    	}
+    	try {
+    		for (Camera.Size size : KsyRecordClient.mSupportedPreviewSizes) {
+        		camerasize.add(size);
+    	    }        	
+    	} catch(Exception e) {
+    		e.printStackTrace();
+    	}
     	
     }
     
