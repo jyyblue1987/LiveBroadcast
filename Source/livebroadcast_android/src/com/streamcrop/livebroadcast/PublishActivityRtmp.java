@@ -88,10 +88,10 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
         client.setConfig(config);
         client.setDisplayPreview(surfaceview);
         
-        startPreview();
+        startPreviewDelay();
     }
     
-    private void startPreview()
+    private void startPreviewDelay()
     {
     	surfaceview.postDelayed(new Runnable() {
 			
@@ -108,7 +108,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
 	                }
 	            });												
 			}
-		}, 1000);
+		}, 500);
     }
     
     private void restartRecord()
@@ -124,15 +124,9 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
 					}
 			    	
 			    	if( recording == true )
-			    	{
-			    		surfaceview.postDelayed(new Runnable() {
-							public void run() {
-								startRecord();
-							}
-						}, 1000);
-			    	}										
+			    		startRecord();						
 				}
-			}, 1000);
+			}, 500);
     }
     
     private void startRecord() {
