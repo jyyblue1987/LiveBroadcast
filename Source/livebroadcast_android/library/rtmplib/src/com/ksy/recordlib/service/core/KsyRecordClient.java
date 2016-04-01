@@ -43,7 +43,7 @@ public class KsyRecordClient implements KsyRecord {
     private STATE clientState = STATE.STOP;
 
     enum STATE {
-        RECORDING, STOP, PAUSE, ERROR
+        RECORDING, STOP, PAUSE, ERROR, 
     }
 
     private KsyRecordClient() {
@@ -68,11 +68,9 @@ public class KsyRecordClient implements KsyRecord {
     *
     * Ks3 Record API
     * */
+    
     @Override
-    public void startRecord() throws KsyRecordException {
-        if (clientState == STATE.RECORDING) {
-            return;
-        }
+    public void startPreview() throws KsyRecordException {
         mEncodeMode = judgeEncodeMode(mContext);
         try {
             ksyRecordSender.start(mContext);
@@ -84,13 +82,23 @@ public class KsyRecordClient implements KsyRecord {
         if (checkConfig()) {
             // Here we begin
             if (mEncodeMode == Constants.ENCODE_MODE_MEDIA_RECORDER) {
-                setUpMp4Config(mRecordHandler);
+            	setUpMp4Config(mRecordHandler);
             } else {
 //                startRecordStep();
             }
         } else {
             throw new KsyRecordException("Check KsyRecordClient Configuration, param should be correct");
         }
+    }
+    
+    @Override
+    public void startRecord() throws KsyRecordException {
+        if (clientState == STATE.RECORDING) {
+            return;
+        }
+   
+        ksyRecordSender.setSendFlag(true);
+        
         clientState = STATE.RECORDING;
     }
 
@@ -223,32 +231,47 @@ public class KsyRecordClient implements KsyRecord {
         return Constants.ENCODE_MODE_MEDIA_RECORDER;
     }
 
-
     @Override
     public void stopRecord() {
         if (clientState != STATE.RECORDING) {
             return;
         }
-        if (mVideoSource != null) {
-            mVideoSource.stop();
-            mVideoSource = null;
-        }
-        if (mVideoTempSource != null) {
-            mVideoTempSource.stop();
-            mVideoTempSource = null;
-        }
-        if (mAudioSource != null) {
-            mAudioSource.stop();
-            mAudioSource = null;
-        }
-        if (mCamera != null) {
-            mCamera.release();
-            mCamera = null;
-        }
-        ksyRecordSender.disconnect();
-        clientState = STATE.STOP;
+        
+        ksyRecordSender.setSendFlag(false);
+        clientState = STATE.STOP;        
     }
 
+    @Override
+    public void stopPreview() {
+        try {
+	        if (mVideoSource != null) {
+	            mVideoSource.stop();
+	            mVideoSource = null;
+	        }
+	        if (mVideoTempSource != null) {
+	            mVideoTempSource.stop();
+	            mVideoTempSource = null;
+	        }
+	        if (mAudioSource != null) {
+	            mAudioSource.stop();
+	            mAudioSource = null;
+	        }
+	        if (mCamera != null) {
+	            mCamera.release();
+	            mCamera = null;
+	        }	        
+	        if( ksyRecordSender != null )
+	        {
+	        	Thread.sleep(1000);
+	        	ksyRecordSender.disconnect();	        	 
+//	        	ksyRecordSender = null;
+	        }
+        } catch( Exception e ) {
+        	e.printStackTrace();
+        }
+        clientState = STATE.STOP;  
+    }
+    
     @Override
     public void release() {
         if (mVideoSource != null) {

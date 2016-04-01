@@ -44,13 +44,18 @@ public class SettingActivity extends Activity {
     	m_txtFrameRate.setText(videoQuality.framerate + "frame/s" );
     	m_txtBitRate.setText("" + (videoQuality.bitrate / 1000.0f));
     	
-    	Camera camera=Camera.open();
-    	Camera.Parameters parameters=camera.getParameters();
-    	for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
-    		camerasize.add(size);
-	    }
+    	try {
+    		Camera camera=Camera.open();
+        	Camera.Parameters parameters=camera.getParameters();
+        	for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
+        		camerasize.add(size);
+    	    }
+        	
+        	camera.release();
+    	} catch(Exception e) {
+    		e.printStackTrace();
+    	}
     	
-    	camera.release();
     }
     
     private void initEvents()

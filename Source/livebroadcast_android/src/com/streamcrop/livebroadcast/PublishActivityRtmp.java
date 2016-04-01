@@ -101,9 +101,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
 	                @Override
 	                public void run() {
 	                	try {
-	                		config.setmUrl("");
-	                		client.setConfig(config);
-							client.startRecord();
+	                		client.startPreview();
 						} catch (KsyRecordException e) {
 							e.printStackTrace();
 						}
@@ -115,26 +113,30 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     
     private void restartRecord()
     {
-    	surfaceview.postDelayed(new Runnable() {
-			
-			@Override
-			public void run() {
-				runOnUiThread(new Runnable() {
-	                @Override
-	                public void run() {
-	                	startRecord();
-	                }
-	            });												
-			}
-		}, 1000);
+    	 surfaceview.postDelayed(new Runnable() {
+				
+				@Override
+				public void run() {
+					try {
+						client.startPreview();
+					} catch (KsyRecordException e) {						
+						e.printStackTrace();
+					}
+			    	
+			    	if( recording == true )
+			    	{
+			    		surfaceview.postDelayed(new Runnable() {
+							public void run() {
+								startRecord();
+							}
+						}, 1000);
+			    	}										
+				}
+			}, 1000);
     }
     
     private void startRecord() {
         try {
-        	stopRecord();
-        	
-        	config.setmUrl(m_Server + "/" + m_Channel);
-        	client.setConfig(config);
             client.startRecord();
             recording = true;
         } catch (KsyRecordException e) {
@@ -162,16 +164,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
                  }
                  else {
                 	 stopRecord();
-                	 
-                	 config.setmUrl("");
-             		 client.setConfig(config);
-					 try {
-						client.startRecord();
-					} catch (KsyRecordException e) {
-						e.printStackTrace();
-					}
-						
-                     btn.setText("Publish");                     
+                	 btn.setText("Publish");                     
                  }
              }
          });     
@@ -196,33 +189,18 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     private void onClickCameraSwitch()
     {
     	try {
-    		if( recording == true )
-        	{
-    			client.stopRecord();
-                
-                surfaceview.postDelayed(new Runnable() {
-					
-					@Override
-					public void run() {
-						runOnUiThread(new Runnable() {
-			                @Override
-			                public void run() {
-			                	
-			                	int camera = config.getCameraType();
-						    	if( camera == CameraInfo.CAMERA_FACING_BACK)
-						    		config.setmCameraType(CameraInfo.CAMERA_FACING_FRONT);						    		
-						    	else
-						    		config.setmCameraType(CameraInfo.CAMERA_FACING_BACK);
-						    	
-						    	recording = false;
-						    	startStop.performClick();
-			                }
-			            });												
-					}
-				}, 1000);
-                
-        		
-        	}	
+    		client.stopPreview();
+    		
+			int camera = config.getCameraType();
+	    	if( camera == CameraInfo.CAMERA_FACING_BACK)
+	    		config.setmCameraType(CameraInfo.CAMERA_FACING_FRONT);						    		
+	    	else
+	    		config.setmCameraType(CameraInfo.CAMERA_FACING_BACK);
+	    							    	
+	    	client.setConfig(config);
+	    	
+	    	restartRecord();
+           	
     	} catch(Exception e){
     		e.printStackTrace();
     	}
@@ -235,6 +213,14 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
        
         startActivity(intent);    
     }
+    
+	@Override
+	public void onDestroy( ) {
+		client.stopPreview();
+		client.release();
+				
+		super.onDestroy();
+	}
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {

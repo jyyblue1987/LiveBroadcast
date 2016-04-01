@@ -11,9 +11,11 @@ import com.ksy.recordlib.service.exception.KsyRecordException;
  * Interface provider for app
  */
 public interface KsyRecord {
+	void startPreview() throws KsyRecordException;
     void startRecord() throws KsyRecordException;
 
     void stopRecord();
+    void stopPreview();
 
     void release();
 

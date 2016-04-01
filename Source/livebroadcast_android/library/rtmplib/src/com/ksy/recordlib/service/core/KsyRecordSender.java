@@ -79,6 +79,8 @@ public class KsyRecordSender {
 
     private Speedometer vidoeFps = new Speedometer();
     private Speedometer audioFps = new Speedometer();
+    
+    private boolean 	m_DataSendFlag = false;
 
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -121,6 +123,8 @@ public class KsyRecordSender {
         IntentFilter filter = new IntentFilter(Constants.NETWORK_STATE_CHANGED);
         pContext.registerReceiver(receiver, filter);
         
+        m_DataSendFlag = false;
+        
         mContext = pContext;
         worker = new Thread(new Runnable() {
             @Override
@@ -136,9 +140,13 @@ public class KsyRecordSender {
         worker.start();
     }
 
+    public void setSendFlag(boolean flag)
+    {
+    	m_DataSendFlag = flag;
+    }
     private void cycle() throws InterruptedException {
         while (!Thread.interrupted()) {
-            while (!connected) {
+            while (!connected || !m_DataSendFlag ) {
                 Thread.sleep(10);
             }
             if (frame_video > MIN_QUEUE_BUFFER && frame_audio > MIN_QUEUE_BUFFER) {
@@ -315,6 +323,8 @@ public class KsyRecordSender {
 
     public void disconnect() {
         _close();
+        
+        m_DataSendFlag = false;
         if (worker.isAlive()) {
             worker.interrupt();
         }
