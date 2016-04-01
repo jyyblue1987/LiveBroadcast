@@ -1,7 +1,5 @@
 package com.streamcrop.livebroadcast;
 
-import java.io.IOException;
-
 import com.ksy.recordlib.service.core.KsyRecordClient;
 import com.ksy.recordlib.service.core.KsyRecordClientConfig;
 import com.ksy.recordlib.service.exception.KsyRecordException;
@@ -19,8 +17,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ImageView;
-import tv.inhand.capture.Session;
-import tv.inhand.capture.SessionBuilder;
 
 public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callback {
     private static final String TAG = "JCameara";
@@ -90,13 +86,55 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     private void setupRecord() {
         client = KsyRecordClient.getInstance(getApplicationContext());
         client.setConfig(config);
-        client.setDisplayPreview(surfaceview);   
-//        client
+        client.setDisplayPreview(surfaceview);
         
+        startPreview();
+    }
+    
+    private void startPreview()
+    {
+    	surfaceview.postDelayed(new Runnable() {
+			
+			@Override
+			public void run() {
+				runOnUiThread(new Runnable() {
+	                @Override
+	                public void run() {
+	                	try {
+	                		config.setmUrl("");
+	                		client.setConfig(config);
+							client.startRecord();
+						} catch (KsyRecordException e) {
+							e.printStackTrace();
+						}
+	                }
+	            });												
+			}
+		}, 1000);
+    }
+    
+    private void restartRecord()
+    {
+    	surfaceview.postDelayed(new Runnable() {
+			
+			@Override
+			public void run() {
+				runOnUiThread(new Runnable() {
+	                @Override
+	                public void run() {
+	                	startRecord();
+	                }
+	            });												
+			}
+		}, 1000);
     }
     
     private void startRecord() {
         try {
+        	stopRecord();
+        	
+        	config.setmUrl(m_Server + "/" + m_Channel);
+        	client.setConfig(config);
             client.startRecord();
             recording = true;
         } catch (KsyRecordException e) {
@@ -124,6 +162,15 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
                  }
                  else {
                 	 stopRecord();
+                	 
+                	 config.setmUrl("");
+             		 client.setConfig(config);
+					 try {
+						client.startRecord();
+					} catch (KsyRecordException e) {
+						e.printStackTrace();
+					}
+						
                      btn.setText("Publish");                     
                  }
              }
@@ -191,12 +238,13 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+    	
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         surfaceHolder = holder;
-      
+             
     }
 
     @Override

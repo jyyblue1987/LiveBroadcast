@@ -125,7 +125,7 @@ public class KsyRecordClient implements KsyRecord {
     }
 
 
-    private void setUpCamera(boolean needPreview) {
+    public void setUpCamera(boolean needPreview) {
         if (mCamera == null) {
             int numberOfCameras = Camera.getNumberOfCameras();
             if (numberOfCameras > 0) {
