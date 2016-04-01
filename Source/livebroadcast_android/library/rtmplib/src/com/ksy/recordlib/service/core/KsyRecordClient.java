@@ -342,4 +342,8 @@ public class KsyRecordClient implements KsyRecord {
     public static void setConfig(KsyRecordClientConfig mConfig) {
         KsyRecordClient.mConfig = mConfig;
     }
+    
+    public static KsyRecordClientConfig getConfig() {
+        return KsyRecordClient.mConfig;
+    }
 }

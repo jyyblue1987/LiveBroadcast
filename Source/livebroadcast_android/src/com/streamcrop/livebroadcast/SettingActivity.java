@@ -3,6 +3,9 @@ package com.streamcrop.livebroadcast;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.ksy.recordlib.service.core.KsyRecordClient;
+import com.ksy.recordlib.service.core.KsyRecordClientConfig;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -15,10 +18,13 @@ import tv.inhand.capture.video.VideoQuality;
  
 public class SettingActivity extends Activity {
 	TextView 	m_txtResolution = null;
-	TextView 	m_txtFrameRate = null;
-	TextView 	m_txtBitRate = null;
+	TextView 	m_txtVideoBitRate = null;
+	TextView 	m_txtAudioBitRate = null;
 	List<Camera.Size> camerasize = new ArrayList<Camera.Size>(); 
 	
+	private KsyRecordClient client;
+    private KsyRecordClientConfig config;
+    
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,35 +38,37 @@ public class SettingActivity extends Activity {
  
     private void findViews()
     {
-    	m_txtResolution = (TextView) findViewById(R.id.txt_resolution);
-    	m_txtFrameRate = (TextView) findViewById(R.id.txt_framerate);
-    	m_txtBitRate = (TextView) findViewById(R.id.txt_bitrate);
+    	m_txtResolution = (TextView) findViewById(R.id.fragment_videosize).findViewById(R.id.txt_content);
+    	m_txtVideoBitRate = (TextView) findViewById(R.id.fragment_videobitrate).findViewById(R.id.txt_content);
+    	m_txtAudioBitRate = (TextView) findViewById(R.id.fragment_audiobitrate).findViewById(R.id.txt_content);
     }
     
     private void initData()
     {
-    	VideoQuality videoQuality = SessionBuilder.getInstance().getVideoQuality();
-    	m_txtResolution.setText(videoQuality.resX + "x" + videoQuality.resY);
-    	m_txtFrameRate.setText(videoQuality.framerate + "frame/s" );
-    	m_txtBitRate.setText("" + (videoQuality.bitrate / 1000.0f));
+    	client = KsyRecordClient.getInstance(getApplicationContext());
+    	config = KsyRecordClient.getConfig();
     	
-    	try {
-    		Camera camera=Camera.open();
-        	Camera.Parameters parameters=camera.getParameters();
-        	for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
-        		camerasize.add(size);
-    	    }
-        	
-        	camera.release();
-    	} catch(Exception e) {
-    		e.printStackTrace();
-    	}
+    	m_txtResolution.setText(config.getVideoWidth() + "x" + config.getVideoHeigh());
+    	m_txtVideoBitRate.setText("" + (config.getVideoBitRate() / 1000) + "Kbps");
+    	m_txtAudioBitRate.setText("" + (config.getAudioBitRate() / 1000) + "Kbps");
+    	
+//    	try {
+//    		Camera camera=Camera.open();
+//        	Camera.Parameters parameters=camera.getParameters();
+//        	for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
+//        		camerasize.add(size);
+//    	    }
+//        	
+//        	camera.release();
+//    	} catch(Exception e) {
+//    		e.printStackTrace();
+//    	}
     	
     }
     
     private void initEvents()
     {
-    	findViewById(R.id.lay_resolution).setOnClickListener(new View.OnClickListener() {
+    	findViewById(R.id.fragment_videosize).setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
@@ -68,19 +76,19 @@ public class SettingActivity extends Activity {
 			}
 		});
     	
-    	findViewById(R.id.txt_framerate).setOnClickListener(new View.OnClickListener() {
-			
-			@Override
-			public void onClick(View v) {
-				onClickFrameRate();
-			}
-		});
-    	
-       	findViewById(R.id.lay_bitrate).setOnClickListener(new View.OnClickListener() {
+    	findViewById(R.id.fragment_videobitrate).setOnClickListener(new View.OnClickListener() {
 		
 			@Override
 			public void onClick(View v) {
 				onClickVideoBitRate();
+			}
+		});
+    	
+    	findViewById(R.id.fragment_audiobitrate).setOnClickListener(new View.OnClickListener() {
+		
+			@Override
+			public void onClick(View v) {
+				onClickAudioBitRate();
 			}
 		});
     }
@@ -97,12 +105,10 @@ public class SettingActivity extends Activity {
 		
 		dialog.setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener() {			
 			public void onClick(DialogInterface dialog, int whichButton) {
-				VideoQuality videoQuality = new VideoQuality();
-				videoQuality.resX = camerasize.get(whichButton).width;
-				videoQuality.resY = camerasize.get(whichButton).height;
-				SessionBuilder.getInstance().setVideoQuality(videoQuality);
+				config.setmVideoWidth(camerasize.get(whichButton).width);
+				config.setmVideoHeigh(camerasize.get(whichButton).height);
 				
-				m_txtResolution.setText(videoQuality.resX + "x" + videoQuality.resY);
+				m_txtResolution.setText(camerasize.get(whichButton).width + "x" + camerasize.get(whichButton).height);
 				
 				dialog.dismiss();
 			}
@@ -126,12 +132,8 @@ public class SettingActivity extends Activity {
 		AlertDialog.Builder dialog = new AlertDialog.Builder(this);
 		
 		dialog.setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener() {			
-			public void onClick(DialogInterface dialog, int whichButton) {
-				VideoQuality videoQuality = new VideoQuality();
-				videoQuality.framerate = framerate[whichButton];
-				SessionBuilder.getInstance().setVideoQuality(videoQuality);
-				
-				m_txtFrameRate.setText(videoQuality.framerate + " frame/s");
+			public void onClick(DialogInterface dialog, int whichButton) {				
+//				m_txt.setText(videoQuality.framerate + " frame/s");
 				
 				dialog.dismiss();
 			}
@@ -156,12 +158,8 @@ public class SettingActivity extends Activity {
 		
 		dialog.setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener() {			
 			public void onClick(DialogInterface dialog, int whichButton) {
-				VideoQuality videoQuality = new VideoQuality();
-				videoQuality.bitrate = bitrate[whichButton] * 1000;
-				SessionBuilder.getInstance().setVideoQuality(videoQuality);
-				
-				m_txtBitRate.setText(bitrate[whichButton] + "");
-				
+				config.setmVideoBitRate(bitrate[whichButton] * 1000);
+				m_txtVideoBitRate.setText(bitrate[whichButton] + "Kbps");				
 				dialog.dismiss();
 			}
 		});
@@ -172,8 +170,30 @@ public class SettingActivity extends Activity {
 		alertDialog.setCanceledOnTouchOutside(true);
     }
     
-	protected void onResume( ) {
+    private void onClickAudioBitRate()
+    {
+    	final int [] bitrate = {2, 5, 10, 15, 20, 25, 30, 35, 40};
+    	String [] items = new String[bitrate.length];
+		for(int i = 0; i < items.length; i++)
+		{
+			items[i] = bitrate[i] + "Kbps";
+		}
 		
-		super.onResume();
-	}
+		AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+		
+		dialog.setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener() {			
+			public void onClick(DialogInterface dialog, int whichButton) {
+				config.setmAudioBitRate(bitrate[whichButton] * 1000);
+				m_txtAudioBitRate.setText(bitrate[whichButton] + "Kbps");				
+				dialog.dismiss();
+			}
+		});
+		
+		dialog.create();
+		AlertDialog alertDialog = dialog.show();
+		
+		alertDialog.setCanceledOnTouchOutside(true);
+    }
+    
+	
 }
