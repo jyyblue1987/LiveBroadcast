@@ -86,29 +86,13 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     private void setupRecord() {
         client = KsyRecordClient.getInstance(getApplicationContext());
         client.setConfig(config);
-        client.setDisplayPreview(surfaceview);
-        
-        startPreviewDelay();
+        client.setDisplayPreview(surfaceview);        
     }
     
     private void startPreviewDelay()
     {
-    	surfaceview.postDelayed(new Runnable() {
-			
-			@Override
-			public void run() {
-				runOnUiThread(new Runnable() {
-	                @Override
-	                public void run() {
-	                	try {
-	                		client.startPreview();
-						} catch (KsyRecordException e) {
-							e.printStackTrace();
-						}
-	                }
-	            });												
-			}
-		}, 500);
+    	client.stopPreview();
+    	restartRecord();    
     }
     
     private void restartRecord()
@@ -224,7 +208,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         surfaceHolder = holder;
-             
+        startPreviewDelay();    
     }
 
     @Override
