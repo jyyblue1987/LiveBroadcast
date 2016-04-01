@@ -11,29 +11,32 @@
   		<SurfaceView
   		    android:id="@+id/surfaceview"
   		    android:layout_width="match_parent"
-  		    android:layout_height="wrap_content"
-  		    android:layout_weight="1" />
-  
-        <Button  
-            android:id="@+id/start"  
-            android:layout_width="fill_parent"  
-            android:layout_height="wrap_content"  
-            android:text="Publish" />
+  		    android:layout_height="match_parent"
+  		     /> 
+       
 	</LinearLayout>
-    <ImageView
-        android:id="@+id/img_camera_switch"
+    <Button
+        android:id="@+id/btn_camera_switch"
         android:layout_width="50dip"
         android:layout_height="50dip"
         android:layout_gravity="right"
         android:layout_marginRight="60dip"
         android:background="@drawable/camera_switch_icon" 
         />
-
-    <ImageView
-        android:id="@+id/img_camera_setting"
+    <Button
+        android:id="@+id/btn_camera_setting"
         android:layout_width="50dip"
         android:layout_height="50dip"
         android:layout_gravity="right"
         android:background="@drawable/camera_setting" />
+     <Button  
+        android:id="@+id/start"  
+        android:layout_width="100dip"  
+        android:layout_height="100dip"  
+        android:layout_gravity="center_horizontal|bottom"
+        android:background="@drawable/player_record"
+        android:text="Publish"
+        android:textColor="#FFFFFF" 
+        />
 
 </FrameLayout> 

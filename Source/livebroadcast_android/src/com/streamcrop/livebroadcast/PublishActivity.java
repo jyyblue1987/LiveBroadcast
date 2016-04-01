@@ -19,8 +19,8 @@ import tv.inhand.capture.SessionBuilder;
 public class PublishActivity extends Activity implements SurfaceHolder.Callback {
     private static final String TAG = "JCameara";
 
-    private ImageView m_imgCameraSwitch;
-    private ImageView m_imgCameraSetting;
+    private Button m_btnCameraSwitch;
+    private Button m_btnCameraSetting;
     
     private Button startStop;
     
@@ -48,8 +48,8 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
          surfaceHolder = surfaceview.getHolder();
          startStop = (Button) this.findViewById(R.id.start);
          
-         m_imgCameraSwitch = (ImageView) findViewById(R.id.img_camera_switch);
-         m_imgCameraSetting = (ImageView) findViewById(R.id.img_camera_setting);
+         m_btnCameraSwitch = (Button) findViewById(R.id.btn_camera_switch);
+         m_btnCameraSetting = (Button) findViewById(R.id.btn_camera_setting);
     }
     
     protected void initData()
@@ -105,7 +105,7 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
              }
          });     
     	 
-    	 m_imgCameraSwitch.setOnClickListener(new View.OnClickListener() {
+    	 m_btnCameraSwitch.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
@@ -113,7 +113,7 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
 			}
 		});
     	 
-    	 m_imgCameraSetting.setOnClickListener(new View.OnClickListener() {
+    	 m_btnCameraSetting.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {

@@ -21,8 +21,8 @@ import android.widget.ImageView;
 public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callback {
     private static final String TAG = "JCameara";
 
-    private ImageView m_imgCameraSwitch;
-    private ImageView m_imgCameraSetting;
+    private Button m_btnCameraSwitch;
+    private Button m_btnCameraSetting;
     
     private Button startStop;
     
@@ -52,8 +52,8 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
          surfaceHolder = surfaceview.getHolder();
          startStop = (Button) this.findViewById(R.id.start);
          
-         m_imgCameraSwitch = (ImageView) findViewById(R.id.img_camera_switch);
-         m_imgCameraSetting = (ImageView) findViewById(R.id.img_camera_setting);
+         m_btnCameraSwitch = (Button) findViewById(R.id.btn_camera_switch);
+         m_btnCameraSetting = (Button) findViewById(R.id.btn_camera_setting);
     }
     
     protected void initData()
@@ -131,7 +131,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     
     protected void initEvents()
     {
-    	ResourceUtils.addClickEffect(startStop);
+    	 ResourceUtils.addClickEffect(startStop);
     	 startStop.setOnClickListener(new OnClickListener() {
              @Override
              public void onClick(View v) {
@@ -147,15 +147,17 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
              }
          });     
     	 
-    	 m_imgCameraSwitch.setOnClickListener(new View.OnClickListener() {
+    	 ResourceUtils.addClickEffect(m_btnCameraSwitch);
+    	 m_btnCameraSwitch.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
 				onClickCameraSwitch();				
 			}
 		});
-    	 
-    	 m_imgCameraSetting.setOnClickListener(new View.OnClickListener() {
+    	
+    	ResourceUtils.addClickEffect(m_btnCameraSetting);
+    	m_btnCameraSetting.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
