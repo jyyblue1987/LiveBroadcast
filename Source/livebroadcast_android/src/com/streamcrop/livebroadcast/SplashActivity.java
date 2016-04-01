@@ -48,7 +48,7 @@ public class SplashActivity extends Activity {
 			public void run() {
 				onFinishAnimation();
 			}
-		}, 1500);
+		}, 5000);
 	}
 	
 	private void onFinishAnimation()
