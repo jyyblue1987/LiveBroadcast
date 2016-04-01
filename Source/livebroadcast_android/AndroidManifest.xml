@@ -41,6 +41,7 @@
         <activity android:name=".MainActivity" android:screenOrientation="landscape"/>
         <activity android:name=".PublishActivity" android:screenOrientation="portrait"/>
         <activity android:name=".SettingActivity" android:screenOrientation="portrait"/>
+        <activity android:name=".PublishActivityRtmp" android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

@@ -394,7 +394,7 @@ public abstract class VideoStream extends MediaStream {
 
 	}
 
-	protected synchronized void createCamera() throws RuntimeException, IOException {
+	public synchronized void createCamera() throws RuntimeException, IOException {
 		if (mSurfaceHolder == null || mSurfaceHolder.getSurface() == null || !mSurfaceReady)
 			throw new IllegalStateException("Invalid surface holder !");
 

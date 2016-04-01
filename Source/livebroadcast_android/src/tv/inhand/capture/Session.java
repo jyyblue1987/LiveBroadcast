@@ -86,6 +86,17 @@ public class Session {
 		return mVideoStream;
 	}	
 	
+	public void startPreview()
+	{
+		try {
+			mVideoStream.createCamera();
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	/** 
 	 * Reference to the context is needed to aquire a MulticastLock. 
 	 * If the Session has a multicast destination is address such a lock will be aquired.

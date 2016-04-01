@@ -2,9 +2,15 @@ package com.streamcrop.livebroadcast;
 
 import java.io.IOException;
 
+import com.ksy.recordlib.service.core.KsyRecordClient;
+import com.ksy.recordlib.service.core.KsyRecordClientConfig;
+import com.ksy.recordlib.service.exception.KsyRecordException;
+import com.ksy.recordlib.service.util.Constants;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.hardware.Camera.CameraInfo;
+import android.media.CamcorderProfile;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -16,7 +22,7 @@ import android.widget.ImageView;
 import tv.inhand.capture.Session;
 import tv.inhand.capture.SessionBuilder;
 
-public class PublishActivity extends Activity implements SurfaceHolder.Callback {
+public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callback {
     private static final String TAG = "JCameara";
 
     private ImageView m_imgCameraSwitch;
@@ -24,10 +30,12 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
     
     private Button startStop;
     
-    private Session session;
     private SurfaceView surfaceview;
     private SurfaceHolder surfaceHolder;
     private boolean recording;
+    
+    private KsyRecordClient client;
+    private KsyRecordClientConfig config;
     
     String m_Server = "178.62.32.245";
     String m_AppName = "hls";
@@ -77,6 +85,43 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
         surfaceHolder.addCallback(this);
         // We still need this line for backward compatibility reasons with android 2
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        
+        setUpEnvironment();
+        setupRecord();
+    }
+    
+    private void setUpEnvironment() {
+        // Keep screen on
+        KsyRecordClientConfig.Builder builder = new KsyRecordClientConfig.Builder();
+        builder.setVideoProfile(CamcorderProfile.QUALITY_720P).setUrl("rtmp://178.62.32.245:1935/hls/1234567");
+        
+        config = builder.build();
+        int videorate = config.getVideoBitRate();        
+        config.setmVideoBitRate(1000000);
+    }
+    
+    private void setupRecord() {
+        client = KsyRecordClient.getInstance(getApplicationContext());
+        client.setConfig(config);
+        client.setDisplayPreview(surfaceview);   
+//        client
+        
+    }
+    
+    private void startRecord() {
+        try {
+            client.startRecord();
+            recording = true;
+        } catch (KsyRecordException e) {
+            e.printStackTrace();
+            Log.d(Constants.LOG_TAG, "Client Error, reason = " + e.getMessage());
+        }
+    }
+    
+    private void stopRecord() {
+        client.stopRecord();
+        recording = false;
+        Log.d(Constants.LOG_TAG, "stop and release");
     }
     
     protected void initEvents()
@@ -87,20 +132,12 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
              public void onClick(View v) {
                  Button btn = (Button)v;
                  if (!recording) {
-                     try {
-                    	 startPublish();
-                         recording = true;
-                         btn.setText("Stop");
-                     } catch (Exception e) {
-                         Log.e(TAG, "video session", e);
-                     }
+                	 startRecord();
+                     btn.setText("Stop");                     
                  }
                  else {
-                     if (session != null) {
-                    	 stopPublish();
-                         recording = false;
-                         btn.setText("Publish");
-                     }
+                	 stopRecord();
+                     btn.setText("Publish");                     
                  }
              }
          });     
@@ -125,10 +162,9 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
     private void onClickCameraSwitch()
     {
     	try {
-    		if( recording == true && session != null )
+    		if( recording == true )
         	{
-    			session.stopPublisher();
-                session.stop();
+    			client.stopRecord();
                 
                 surfaceview.postDelayed(new Runnable() {
 					
@@ -137,11 +173,12 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
 						runOnUiThread(new Runnable() {
 			                @Override
 			                public void run() {
-			                	int camera = SessionBuilder.getInstance().getCamera();
+			                	
+			                	int camera = config.getCameraType();
 						    	if( camera == CameraInfo.CAMERA_FACING_BACK)
-						    		SessionBuilder.getInstance().setCamera(CameraInfo.CAMERA_FACING_FRONT);
+						    		config.setmCameraType(CameraInfo.CAMERA_FACING_FRONT);						    		
 						    	else
-						    		SessionBuilder.getInstance().setCamera(CameraInfo.CAMERA_FACING_BACK);
+						    		config.setmCameraType(CameraInfo.CAMERA_FACING_BACK);
 						    	
 						    	recording = false;
 						    	startStop.performClick();
@@ -164,27 +201,7 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
        
         startActivity(intent);    
     }
-    
-    private void startPublish()
-    {
-    	try {
-			session = SessionBuilder.getInstance().build();
-			session.startPublisher(m_Channel);
-	        session.start();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-    }
-    
-    private void stopPublish()
-    {
-    	if( session == null )
-    		return;
-    	
-		session.stopPublisher();
-		session.stop();
-    }
-	
+
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
     }
@@ -192,24 +209,11 @@ public class PublishActivity extends Activity implements SurfaceHolder.Callback 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         surfaceHolder = holder;
-        try {
-            SessionBuilder.getInstance()                   
-                    .setContext(getApplicationContext())
-                    .setSurfaceHolder(surfaceHolder)
-                    .setHost(m_Server)
-                    .setAppName(m_AppName).build().startPreview();
-            
-        } catch (Exception e) {
-            Log.e(TAG, "Can't build session", e);
-        }
+      
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-    	if( session != null && session.isStreaming() )
-    	{
-    		session.stopPublisher();
-    		session.stop();
-    	}
+    
     }
 }  

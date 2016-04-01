@@ -140,11 +140,11 @@ public class SettingActivity extends Activity {
     
     private void onClickVideoBitRate()
     {
-    	final int [] bitrate = {1000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000};
+    	final int [] bitrate = {200, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000};
     	String [] items = new String[bitrate.length];
 		for(int i = 0; i < items.length; i++)
 		{
-			items[i] = (bitrate[i] / 1000.0f) + "Kbps/s";
+			items[i] = bitrate[i] + "Kbps/s";
 		}
 		
 		AlertDialog.Builder dialog = new AlertDialog.Builder(this);
@@ -152,10 +152,10 @@ public class SettingActivity extends Activity {
 		dialog.setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener() {			
 			public void onClick(DialogInterface dialog, int whichButton) {
 				VideoQuality videoQuality = new VideoQuality();
-				videoQuality.bitrate = bitrate[whichButton];
+				videoQuality.bitrate = bitrate[whichButton] * 1000;
 				SessionBuilder.getInstance().setVideoQuality(videoQuality);
 				
-				m_txtBitRate.setText((bitrate[whichButton] / 1000.0f) + "");
+				m_txtBitRate.setText(bitrate[whichButton] + "");
 				
 				dialog.dismiss();
 			}

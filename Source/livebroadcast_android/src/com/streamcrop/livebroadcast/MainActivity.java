@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
     	String server = m_EditServer.getText().toString();
     	String channel = m_editChannel.getText().toString();
     	
-    	Intent intent = new Intent(this, PublishActivity.class);
+    	Intent intent = new Intent(this, PublishActivityRtmp.class);
        
     	Bundle bundle = new Bundle();    	
     	bundle.putString("server", server);
