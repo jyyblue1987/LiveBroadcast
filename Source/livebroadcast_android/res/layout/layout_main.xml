@@ -22,7 +22,7 @@
 	        android:id="@+id/edit_address"
 	        android:layout_width="200dip"
 	        android:layout_height="wrap_content"
-	        android:text="178.62.32.245/hls"
+	        android:text="rtmp://178.62.32.245:1935/hls"
 	        android:inputType="numberDecimal"
 			android:digits="0123456789."
 	        />    

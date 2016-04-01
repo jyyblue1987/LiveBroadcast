@@ -37,7 +37,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     private KsyRecordClient client;
     private KsyRecordClientConfig config;
     
-    String m_Server = "178.62.32.245";
+    String m_Server = "rtmp://178.62.32.245:1935/hls";
     String m_AppName = "hls";
     String m_Channel = "jyy1";
     
@@ -66,19 +66,8 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
 		
 		if( bundle != null )
 		{
-			String server = bundle.getString("server", "178.62.32.245/hls"); 
+			m_Server = bundle.getString("server", "rtmp://178.62.32.245:1935/hls"); 
 			
-			int index = server.indexOf("/");
-			if( index >= 0 )
-			{
-				m_Server = server.substring(0, index);
-				m_AppName = server.substring(index + 1);
-			}
-			else
-			{
-				m_Server = server + "";
-				m_AppName = "hls";
-			}
 			m_Channel = bundle.getString("channel", "jyy1");
 		}
         
@@ -93,11 +82,9 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     private void setUpEnvironment() {
         // Keep screen on
         KsyRecordClientConfig.Builder builder = new KsyRecordClientConfig.Builder();
-        builder.setVideoProfile(CamcorderProfile.QUALITY_720P).setUrl("rtmp://178.62.32.245:1935/hls/1234567");
+        builder.setVideoProfile(CamcorderProfile.QUALITY_720P).setUrl(m_Server + "/" + m_Channel);
         
         config = builder.build();
-        int videorate = config.getVideoBitRate();        
-        config.setmVideoBitRate(1000000);
     }
     
     private void setupRecord() {
