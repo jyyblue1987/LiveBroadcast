@@ -15,6 +15,7 @@ import com.ksy.recordlib.service.core.KsyRecordClient;
 import com.ksy.recordlib.service.core.KsyRecordClientConfig;
 import com.ksy.recordlib.service.core.KsyRecordSender;
 import com.ksy.recordlib.service.util.Constants;
+import com.ksy.recordlib.service.util.OnClientErrorListener;
 import com.ksy.recordlib.service.util.PrefUtil;
 
 import java.io.BufferedOutputStream;
@@ -31,7 +32,12 @@ import java.nio.charset.Charset;
  * Created by eflakemac on 15/6/19.
  */
 public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.OnInfoListener, MediaRecorder.OnErrorListener {
-    private static final int FRAME_TYPE_PPS = 1;
+
+    byte SEI_ROTATION_0[] = {0x00, 0x00, 0x03, 0x08, 0x00, 0x0A, -128};
+    byte SEI_ROTATION_90[] = {0x66, 0x2F, 0x03, 0x08, 0x00, 0x0A, -128};
+    byte SEI_ROTATION_180[] = {0x66, 0x2F, 0x03, 0x10, 0x00, 0x0A, -128};
+    byte SEI_ROTATION_270[] = {0x66, 0x2F, 0x03, 0x18, 0x00, 0x0A, -128};
+
     private static final int FRAME_TYPE_SPS = 0;
     private static final int FRAME_TYPE_DATA = 2;
     private static final int FRAME_DEFINE_TYPE_VIDEO = 9;
@@ -40,33 +46,23 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
     private final KsyRecordClient.RecordHandler mHandler;
     private final Context mContext;
     private Camera mCamera;
-    private SurfaceView mSurefaceView;
     private MediaRecorder mRecorder;
     private KsyRecordClientConfig mConfig;
     private ParcelFileDescriptor[] piple;
-    private boolean mRunning = false;
-    private String path;
     //    private long delay = 0;
-    private long oldTime = 0;
-    private long newTime = 0;
-    private long duration = 0;
     private int length;
-    private int type;
+    private int nalutype;
     private String pps;
     private String sps;
     private String pl;
     //    private int sum = 0;
-    private boolean isPpsFrameSended = false;
     private boolean isSpsFrameSended = false;
     private ByteBuffer content;
     private byte[] flvFrameByteArray;
     private byte[] dataLengthArray;
     private byte[] timestampArray;
     private byte[] allFrameLengthArray;
-    private byte[] buffer = new byte[1 * 1000 * 1000];
-    private boolean isWriteFlvInSdcard = false;
-    private int recordsum = 0;
-    private int videoExtraSize = 9;
+    private int videoExtraSize = 5;
     private int last_sum = 0;
 
     private static final int VIDEO_TAG = 3;
@@ -77,16 +73,15 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
 
     public static long startVideoTime;
 
+
     public RecoderVideoSource(Camera mCamera, KsyRecordClientConfig mConfig, SurfaceView mSurfaceView, KsyRecordClient.RecordHandler mRecordHandler, Context mContext) {
         this.mCamera = mCamera;
         this.mConfig = mConfig;
-        this.mSurefaceView = mSurfaceView;
         mRecorder = new MediaRecorder();
         mHandler = mRecordHandler;
         this.mContext = mContext;
 
         ksyVideoSender = KsyRecordSender.getRecordInstance();
-        ksyVideoSender.setRecorderData(mConfig.getUrl(), VIDEO_TAG);
         Log.d(Constants.LOG_TAG, "test");
     }
 
@@ -108,10 +103,14 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
             mRecorder.prepare();
             mRecorder.start();
             startVideoTime = System.currentTimeMillis();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             release();
+            if (onClientErrorListener != null) {
+                onClientErrorListener.onClientError(OnClientErrorListener.SOURCE_VIDEO, OnClientErrorListener.ERROR_MEDIACODER_START_FAILED);
+            }
         }
+        mHandler.sendEmptyMessage(Constants.MESSAGE_SWITCH_CAMERA_FINISH);
     }
 
     @Override
@@ -138,10 +137,20 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
         sync.clear();
     }
 
+    public void close() {
+        mRunning = false;
+        releaseRecorder();
+        releaseCamera();
+    }
+
     private void releaseCamera() {
         if (mCamera != null) {
-            mCamera.stopPreview();
-            mCamera.release();
+            try {
+                mCamera.stopPreview();
+                mCamera.release();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -161,8 +170,10 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
     @Override
     public void run() {
         prepare();
-        is = new FileInputStream(this.piple[0].getFileDescriptor());
-        inputChannel = is.getChannel();
+        if (mRunning) {
+            is = new FileInputStream(this.piple[0].getFileDescriptor());
+            inputChannel = is.getChannel();
+        }
         while (mRunning) {
             Log.d(Constants.LOG_TAG, "entering video loop");
             // This will skip the MPEG4 header if this step fails we can't stream anything :(
@@ -185,7 +196,6 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
 
             while (!Thread.interrupted()) {
                 // Begin parse video data
-                oldTime = System.currentTimeMillis();
                 parseAndSend();
                /* duration = System.currentTimeMillis() - oldTime;
                 stats.push(duration);
@@ -216,6 +226,27 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
             byte[] pps_prefix = hexStringToBytes("01");
             byte[] pps_only = Base64.decode(pps.getBytes(), Base64.DEFAULT);
             byte[] pps_length = intToByteArrayTwoByte(pps_only.length);
+            // Remove SEI Here
+//
+//            int degree = mConfig.getRecordOrientation();
+//            Log.e("degree", "mediarecord degree=" + degree);
+//            byte[] sei_only = null;
+//            byte[] sei_prefix = hexStringToBytes("01");
+//            byte[] sei_length_bytes = intToByteArrayTwoByte(7);
+//            int sei_length = sei_prefix.length + 7 + sei_length_bytes.length;
+//
+//            if (degree == 0) {
+//                sei_length = 0;
+//            } else if (degree == 90) {
+//                sei_only = SEI_ROTATION_90;
+//            } else if (degree == 180) {
+//                sei_only = SEI_ROTATION_180;
+//            } else if (degree == 270) {
+//                sei_only = SEI_ROTATION_270;
+//            }
+
+//            byte[] sps_pps = new byte[sps_prefix.length + sps_length.length + sps_only.length + pps_prefix.length
+//                    + pps_only.length + pps_length.length + sei_length];
             byte[] sps_pps = new byte[sps_prefix.length + sps_length.length + sps_only.length + pps_prefix.length
                     + pps_only.length + pps_length.length];
             fillArray(sps_pps, sps_prefix);
@@ -224,11 +255,35 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
             fillArray(sps_pps, pps_prefix);
             fillArray(sps_pps, pps_length);
             fillArray(sps_pps, pps_only);
+//            if (degree != 0) {
+//                fillArray(sps_pps, sei_prefix);
+//                fillArray(sps_pps, sei_length_bytes);
+//                fillArray(sps_pps, sei_only);
+//            }
             // build sps_pps end
             content.put(sps_pps);
             length = content.position();
             makeFlvFrame(FRAME_TYPE_SPS);
             isSpsFrameSended = true;
+
+            // Send Sei Frame Here
+//            content.clear();
+//            byte[] sei_content = null;
+//            int degree = mConfig.getRecordOrientation();
+//            if (degree == 0) {
+//            } else if (degree == 90) {
+//                sei_content = SEI_ROTATION_90;
+//            } else if (degree == 180) {
+//                sei_content = SEI_ROTATION_180;
+//            } else if (degree == 270) {
+//                sei_content = SEI_ROTATION_270;
+//            }
+//            if (sei_content != null) {
+//                content.put(sei_content);
+//                length = content.position();
+//                makeFlvFrame(FRAME_TYPE_DATA);
+//            }
+//            isSeiFrameSended = true;
         }
     }
 
@@ -236,23 +291,22 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
         try {
             // 0-3 length,4 type
             int headerResult = fill(header, 0, 4);
-            Log.d(Constants.LOG_TAG, "header size = " + 4 + "header read result = " + headerResult);
-            ts = sync.getTime();
-            Log.d(Constants.LOG_TAG, "timestamp = " + ts);
+//            Log.d(Constants.LOG_TAG, "header size = " + 4 + "header read result = " + headerResult);
             length = (header[0] & 0xFF) << 24 | (header[1] & 0xFF) << 16 | (header[2] & 0xFF) << 8 | (header[3] & 0xFF);
             if (length > mConfig.getVideoBitRate() * 5 || length < 0) {
                 return;
             }
-            Log.d(Constants.LOG_TAG, "header length = " + length + "content length");
+//            Log.d(Constants.LOG_TAG, "header length size = " + length + "content length");
             content.clear();
             int contentLength = readIntoBuffer(content, length);
-            Log.d(Constants.LOG_TAG, "header length = " + length + "content length" + contentLength);
+//            Log.d(Constants.LOG_TAG, "header length = " + length + "content length" + contentLength);
             if (content.limit() > 0) {
                 kFlag = content.get(0);
-                type = kFlag & 0x1F;
+                nalutype = kFlag & 0x1F;
             }
             // Three types of flv video frame
             makeFlvFrame(FRAME_TYPE_DATA);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -267,14 +321,23 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
     }
 
     private void makeFlvFrame(int type) {
+        ts = sync.getTime();
+        videoExtraSize = 5;
+        int frameTotalLength;
+        int degree = mConfig.getRecordOrientation();
         if (type == FRAME_TYPE_SPS) {
-            videoExtraSize = 5;
+            ts = 0;
+            frameTotalLength = FRAME_DEFINE_HEAD_LENGTH + length + videoExtraSize + FRAME_DEFINE_FOOTER_LENGTH;
+            dataLengthArray = intToByteArray(length + videoExtraSize);
+        } else if (degree == 0) {
+            frameTotalLength = FRAME_DEFINE_HEAD_LENGTH + length + videoExtraSize + 4 + FRAME_DEFINE_FOOTER_LENGTH;
+            dataLengthArray = intToByteArray(length + videoExtraSize + 4);
         } else {
-            videoExtraSize = 9;
+            frameTotalLength = FRAME_DEFINE_HEAD_LENGTH + length + videoExtraSize + 11 + 4 + FRAME_DEFINE_FOOTER_LENGTH;
+            dataLengthArray = intToByteArray(length + videoExtraSize + 11 + 4);
         }
-        flvFrameByteArray = new byte[FRAME_DEFINE_HEAD_LENGTH + length + videoExtraSize + FRAME_DEFINE_FOOTER_LENGTH];
+        flvFrameByteArray = new byte[frameTotalLength];
         flvFrameByteArray[0] = (byte) FRAME_DEFINE_TYPE_VIDEO;
-        dataLengthArray = intToByteArray(length + videoExtraSize);
         flvFrameByteArray[1] = dataLengthArray[0];
         flvFrameByteArray[2] = dataLengthArray[1];
         flvFrameByteArray[3] = dataLengthArray[2];
@@ -290,28 +353,52 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
         for (int i = 0; i < videoExtraSize; i++) {
             if (i == 0) {
                 //1 byte flag
-                flvFrameByteArray[11 + i] = (byte) 23;
+                flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + i] = (byte) 23;
             } else if (i == 1) {
-                if (type == FRAME_TYPE_SPS || type == FRAME_TYPE_PPS) {
-                    flvFrameByteArray[11 + i] = (byte) 0;
+                if (type == FRAME_TYPE_SPS) {
+                    flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + i] = (byte) 0;
                 } else {
-                    flvFrameByteArray[11 + i] = (byte) 1;
+                    flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + i] = (byte) 1;
                 }
             } else if (i < 5) {
-                flvFrameByteArray[11 + i] = (byte) 0;
-            } else {
-                if (type != FRAME_TYPE_SPS) {
-                    byte[] real_length = intToByteArrayFull(length);
-                    flvFrameByteArray[11 + i] = real_length[i - 5];
-                }
+                flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + i] = (byte) 0;
             }
         }
-        System.arraycopy(content.array(), 0, flvFrameByteArray, FRAME_DEFINE_HEAD_LENGTH + videoExtraSize, length);
-        allFrameLengthArray = intToByteArrayFull(FRAME_DEFINE_HEAD_LENGTH + length + videoExtraSize + FRAME_DEFINE_FOOTER_LENGTH);
-        flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + length + videoExtraSize] = allFrameLengthArray[0];
-        flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + length + videoExtraSize + 1] = allFrameLengthArray[1];
-        flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + length + videoExtraSize + 2] = allFrameLengthArray[2];
-        flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + length + videoExtraSize + 3] = allFrameLengthArray[3];
+        // Add Sei Content and Replace Data content here
+//        int pos = 0;
+        int pos = FRAME_DEFINE_HEAD_LENGTH + videoExtraSize;
+        if (type != FRAME_TYPE_SPS) {
+            if (degree != 0) {
+                // copy sei content
+                int sei_length = 7;
+                byte[] sei_content = SEI_ROTATION_0;
+                byte[] sei_length_array = intToByteArrayFull(sei_length);
+                System.arraycopy(sei_length_array, 0, flvFrameByteArray, pos, 4);
+                pos += 4;
+                if (degree == 90) {
+                    sei_content = SEI_ROTATION_90;
+                } else if (degree == 180) {
+                    sei_content = SEI_ROTATION_180;
+                } else if (degree == 270) {
+                    sei_content = SEI_ROTATION_270;
+                }
+                System.arraycopy(sei_content, 0, flvFrameByteArray, pos, 7);
+                pos += 7;
+
+            }
+            byte[] real_data_length_array = intToByteArrayFull(length);
+            System.arraycopy(real_data_length_array, 0, flvFrameByteArray, pos, real_data_length_array.length);
+            pos += 4;
+        } else {
+            KsyRecordClient.startWaitTIme = System.currentTimeMillis() - KsyRecordClient.startTime;
+        }
+        //copy real frame  data
+
+        System.arraycopy(content.array(), 0, flvFrameByteArray, pos, length);
+        pos += length;
+
+        allFrameLengthArray = intToByteArrayFull(pos + FRAME_DEFINE_FOOTER_LENGTH);
+        System.arraycopy(allFrameLengthArray, 0, flvFrameByteArray, pos, allFrameLengthArray.length);
 
         //添加视频数据到队列
         KSYFlvData ksyVideo = new KSYFlvData();
@@ -319,51 +406,15 @@ public class RecoderVideoSource extends KsyMediaSource implements MediaRecorder.
         ksyVideo.size = flvFrameByteArray.length;
         ksyVideo.dts = (int) ts;
         ksyVideo.type = 11;
-        ksyVideo.frameType = type;
-
-        ksyVideoSender.addToQueue(ksyVideo, FROM_VIDEO_DATA);
-
-        /*for (int i = 0; i < flvFrameByteArray.length; i++) {
-            if (recordsum + i < buffer.length) {
-                if (recordsum == 0) {
-                    byte[] flv = hexStringToBytes("464C56010100000009");
-                    Log.d(Constants.LOG_TAG, "flv length = " + flv.length);
-                    for (int j = 0; j < 9; j++) {
-                        buffer[recordsum + j] = flv[j];
-                    }
-                    buffer[recordsum + 9 + 0] = 0;
-                    buffer[recordsum + 9 + 1] = 0;
-                    buffer[recordsum + 9 + 2] = 0;
-                    buffer[recordsum + 9 + 3] = 0;
-                    buffer[recordsum + 9 + 4 + i] = flvFrameByteArray[i];
-                } else {
-                    buffer[recordsum + i] = flvFrameByteArray[i];
-                }
-            } else {
-                Log.d(Constants.LOG_TAG, "buffer write complete");
-
-                if (!isWriteFlvInSdcard) {
-                    String path = getSDPath();
-                    File dir = new File(path + "/flvrecordtest");
-                    if (!dir.exists()) {
-                        dir.mkdir();
-                    }
-                    createFile(dir + File.separator + "frame.flv", buffer);
-                    Log.d(Constants.LOG_TAG, "write flv into sdcard complete");
-                    isWriteFlvInSdcard = true;
-                } else {
-                    Log.d(Constants.LOG_TAG, "already write flv into sdcard complete");
-                }
-                break;
-
-            }
-        }
-        if (recordsum == 0) {
-            recordsum += flvFrameByteArray.length + 9 + 4;
+        if (type == FRAME_TYPE_SPS) {
+            ksyVideo.frameType = KSYFlvData.NALU_TYPE_IDR;
         } else {
-            recordsum += flvFrameByteArray.length;
-        }*/
+            ksyVideo.frameType = nalutype;
+        }
+        ksyVideoSender.addToQueue(ksyVideo, FROM_VIDEO_DATA);
     }
+    // Add data here
+
 
     private byte[] longToByteArray(long ts) {
         byte[] result = new byte[4];

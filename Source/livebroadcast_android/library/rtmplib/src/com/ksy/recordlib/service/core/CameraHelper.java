@@ -36,22 +36,26 @@ public class CameraHelper {
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int MEDIA_TYPE_VIDEO = 2;
 
-    private static HashMap<Integer, List<Camera.Size>> camearSizeTable = new HashMap<Integer, List<Camera.Size>>(2);
+    private static HashMap<Integer, List<Camera.Size>> camearSizeTable = new HashMap<>(2);
 
 
     public static List<Camera.Size> getSupportCameraSize(int cameraType) {
         List<Camera.Size> sizes = camearSizeTable.get(cameraType);
         if (sizes == null) {
-            android.hardware.Camera camera = CameraHelper.getDefaultCamera(cameraType);
+            Camera camera = CameraHelper.getDefaultCamera(cameraType);
             if (camera != null) {
-                sizes = camera.getParameters().getSupportedVideoSizes();
-                if (sizes == null) {
-                    sizes = camera.getParameters().getSupportedPreviewSizes();
+                try {
+                    sizes = camera.getParameters().getSupportedVideoSizes();
+                    if (sizes == null) {
+                        sizes = camera.getParameters().getSupportedPreviewSizes();
+                    }
+                    camearSizeTable.put(cameraType, sizes);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                camearSizeTable.put(cameraType, sizes);
-
             }
-            camera.release();
+            if (camera != null)
+                camera.release();
         }
         return sizes;
     }

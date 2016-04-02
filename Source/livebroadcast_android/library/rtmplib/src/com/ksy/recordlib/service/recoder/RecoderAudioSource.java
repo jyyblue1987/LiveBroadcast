@@ -13,6 +13,7 @@ import com.ksy.recordlib.service.core.KsyRecordClient;
 import com.ksy.recordlib.service.core.KsyRecordClientConfig;
 import com.ksy.recordlib.service.core.KsyRecordSender;
 import com.ksy.recordlib.service.util.Constants;
+import com.ksy.recordlib.service.util.OnClientErrorListener;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -34,7 +35,6 @@ public class RecoderAudioSource extends KsyMediaSource implements MediaRecorder.
     private KsyRecordClientConfig mConfig;
     private MediaRecorder mRecorder;
     private ParcelFileDescriptor[] piple;
-    private boolean mRunning;
     private long oldTime = 0;
     private long duration = 0;
 
@@ -75,10 +75,7 @@ public class RecoderAudioSource extends KsyMediaSource implements MediaRecorder.
         this.mRecordHandler = mRecordHandler;
         this.mContext = mContext;
         mRecorder = new MediaRecorder();
-
         ksyRecordSender = KsyRecordSender.getRecordInstance();
-        ksyRecordSender.setRecorderData(mConfig.getUrl(), AUDIO_TAG);
-
     }
 
     @Override
@@ -90,7 +87,7 @@ public class RecoderAudioSource extends KsyMediaSource implements MediaRecorder.
         mRecorder.setAudioChannels(2);
         mRecorder.setAudioSamplingRate(mConfig.getAudioSampleRate());
         mRecorder.setAudioEncodingBitRate(mConfig.getAudioBitRate());
-        mRecorder.setAudioEncoder(mConfig.getAudioEncorder());
+        mRecorder.setAudioEncoder(mConfig.getAudioEncoder());
         delay = 1024 * 1000 / mConfig.getAudioSampleRate();
         aac_flag = (byte) 0xAF;
 
@@ -105,7 +102,12 @@ public class RecoderAudioSource extends KsyMediaSource implements MediaRecorder.
             mRecorder.prepare();
             mRecorder.start();
             startAudioTime = System.currentTimeMillis();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
+            release();
+            if (onClientErrorListener != null) {
+                onClientErrorListener.onClientError(OnClientErrorListener.SOURCE_AUDIO, OnClientErrorListener.ERROR_MEDIACODER_START_FAILED);
+            }
         }
     }
 
@@ -147,9 +149,10 @@ public class RecoderAudioSource extends KsyMediaSource implements MediaRecorder.
     @Override
     public void run() {
         prepare();
-        is = new FileInputStream(this.piple[0].getFileDescriptor());
+        if (mRunning) {
+            is = new FileInputStream(this.piple[0].getFileDescriptor());
+        }
         while (mRunning) {
-//            Log.d(Constants.LOG_TAG, "entering audio loop");
             // parse audio
             isNeedLoop = true;
             while (isNeedLoop) {
@@ -178,7 +181,6 @@ public class RecoderAudioSource extends KsyMediaSource implements MediaRecorder.
             int sfi = (header_buffer_rest[0] & (byte) 0x3c) >> 2;
             int ch = ((header_buffer_rest[0] & (byte) 0x01) << 6) | ((header_buffer_rest[1] & (byte) 0xc0) >> 6);
             int x = (((profile + 1) & 0x1f) << 11) | ((sfi & 0x0f) << 7) | ((ch & 0x0f) << 3);
-            Log.e("RecoderVideoSource", "length =" + length);
             special_content = intToByteArrayTwoByte(x);
             int frame_length = length - header_size;
             byte[] frame_content = new byte[frame_length];
@@ -196,7 +198,6 @@ public class RecoderAudioSource extends KsyMediaSource implements MediaRecorder.
             }
             // make flv
             ts += delay;
-//            sync.reset(ts);
             flvFrameByteArray = new byte[FRAME_DEFINE_HEAD_LENGTH + frame_length + videoExtraSize + FRAME_DEFINE_FOOTER_LENGTH];
             flvFrameByteArray[0] = (byte) FRAME_DEFINE_TYPE_AUDIO;
             dataLengthArray = intToByteArray(frame_length + videoExtraSize);
@@ -237,9 +238,6 @@ public class RecoderAudioSource extends KsyMediaSource implements MediaRecorder.
             flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + frame_length + videoExtraSize + 1] = allFrameLengthArray[1];
             flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + frame_length + videoExtraSize + 2] = allFrameLengthArray[2];
             flvFrameByteArray[FRAME_DEFINE_HEAD_LENGTH + frame_length + videoExtraSize + 3] = allFrameLengthArray[3];
-//            Log.d(Constants.LOG_TAG, "write frame ,length =" + frame_length);
-            // send
-//            addToQueue.send(flvFrameByteArray, flvFrameByteArray.length);
 
             //添加音频数据到队列
             KSYFlvData ksyAudio = new KSYFlvData();

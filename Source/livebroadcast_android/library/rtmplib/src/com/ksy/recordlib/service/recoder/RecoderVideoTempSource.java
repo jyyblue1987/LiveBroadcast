@@ -3,7 +3,6 @@ package com.ksy.recordlib.service.recoder;
 import android.content.Context;
 import android.hardware.Camera;
 import android.media.MediaRecorder;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.SurfaceView;
 
@@ -14,6 +13,7 @@ import com.ksy.recordlib.service.core.KsyRecordSender;
 import com.ksy.recordlib.service.util.Constants;
 import com.ksy.recordlib.service.util.FileUtil;
 import com.ksy.recordlib.service.util.MP4Config;
+import com.ksy.recordlib.service.util.OnClientErrorListener;
 import com.ksy.recordlib.service.util.PrefUtil;
 
 import java.io.BufferedOutputStream;
@@ -21,8 +21,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by eflakemac on 15/6/19.
@@ -31,14 +29,9 @@ public class RecoderVideoTempSource extends KsyMediaSource implements MediaRecor
     private final KsyRecordClient.RecordHandler mHandler;
     private final Context mContext;
     private Camera mCamera;
-    private SurfaceView mSurefaceView;
     private MediaRecorder mRecorder;
     private KsyRecordClientConfig mConfig;
-    private ParcelFileDescriptor[] piple;
-    private boolean mRunning = false;
     private String path;
-    private Semaphore mLock = new Semaphore(0);
-
     private static final int VIDEO_TEMP = 1;
 
     private KsyRecordSender ksyVideoTempSender;
@@ -47,64 +40,34 @@ public class RecoderVideoTempSource extends KsyMediaSource implements MediaRecor
 //        super(mConfig.getUrl(), VIDEO_TEMP);
         this.mCamera = mCamera;
         this.mConfig = mConfig;
-        this.mSurefaceView = mSurfaceView;
         mRecorder = new MediaRecorder();
         mHandler = mRecordHandler;
         this.mContext = mContext;
-
         ksyVideoTempSender = KsyRecordSender.getRecordInstance();
-        ksyVideoTempSender.setRecorderData(mConfig.getUrl(), VIDEO_TEMP);
-
     }
 
     @Override
     public void prepare() {
-        mRecorder.setCamera(mCamera);
-        mConfig.configMediaRecorder(mRecorder, KsyRecordClientConfig.MEDIA_TEMP);
-        String path = FileUtil.getOutputMediaFile(Constants.MEDIA_TYPE_VIDEO);
-        mRecorder.setOutputFile(path);
-        mRecorder.setMaxDuration(3000);
         try {
-            this.piple = ParcelFileDescriptor.createPipe();
-        } catch (IOException e) {
-            e.printStackTrace();
-            release();
-        }
-//        mRecorder.setOutputFile(this.piple[1].getFileDescriptor());
-        try {
+            mRecorder.setCamera(mCamera);
+            mConfig.configMediaRecorder(mRecorder, KsyRecordClientConfig.MEDIA_TEMP);
+            path = FileUtil.getOutputMediaFile(mContext, Constants.MEDIA_TYPE_VIDEO);
+            mRecorder.setOutputFile(path);
+            mRecorder.setMaxDuration(3000);
             mRecorder.setOnInfoListener(this);
             mRecorder.setOnErrorListener(this);
             mRecorder.prepare();
             mRecorder.start();
             mHandler.sendEmptyMessage(Constants.MESSAGE_MP4CONFIG_START_PREVIEW);
-            if (mLock.tryAcquire(500, TimeUnit.MILLISECONDS)) {
-                Log.d(Constants.LOG_TAG, "MediaRecorder callback was called :)");
-                Thread.sleep(400);
-            } else {
-                Log.d(Constants.LOG_TAG, "MediaRecorder callback was not called after 6 seconds... :(");
+        } catch (Exception e) {
+            e.printStackTrace();
+            release();
+            if (onClientErrorListener != null) {
+                onClientErrorListener.onClientError(OnClientErrorListener.SOURCE_VIDEO_TEMP, OnClientErrorListener.ERROR_MEDIACODER_START_FAILED);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            release();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            release();
         }
         Log.d(Constants.LOG_TAG, "record 400ms for mp4config");
-        release();
         // Retrieve SPS & PPS & ProfileId with MP4Config
-        try {
-            MP4Config config = new MP4Config(path);
-            // Delete dummy video
-            File file = new File(path);
-            if (!file.delete()) Log.e(Constants.LOG_TAG, "Temp file could not be erased");
-            Log.d(Constants.LOG_TAG, "ProfileLevel = " + config.getProfileLevel() + ",B64SPS = " + config.getB64SPS() + ",B64PPS = " + config.getB64PPS());
-            PrefUtil.saveMp4Config(mContext, config);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        mHandler.sendEmptyMessage(Constants.MESSAGE_MP4CONFIG_FINISH);
     }
 
     @Override
@@ -119,25 +82,25 @@ public class RecoderVideoTempSource extends KsyMediaSource implements MediaRecor
     @Override
     public void stop() {
         if (mRunning == true) {
+            mRunning = false;
             release();
         }
     }
 
     @Override
     public void release() {
-        mRunning = false;
         releaseRecorder();
-        reconnectCamera();
+//        reconnectCamera();
     }
 
     private void reconnectCamera() {
         if (mCamera != null) {
             try {
                 mCamera.reconnect();
-            } catch (IOException e) {
+                mCamera.lock();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-            mCamera.lock();
         }
     }
 
@@ -145,13 +108,17 @@ public class RecoderVideoTempSource extends KsyMediaSource implements MediaRecor
         if (mRecorder != null) {
             mRecorder.setOnErrorListener(null);
             mRecorder.setOnInfoListener(null);
-            mRecorder.reset();
-            Log.d(Constants.LOG_TAG, "mRecorder reset");
-            mRecorder.release();
-            Log.d(Constants.LOG_TAG, "mRecorder release");
-            mRecorder = null;
-            Log.d(Constants.LOG_TAG, "mRecorder complete");
-            mCamera.lock();
+            try {
+                mRecorder.reset();
+                Log.d(Constants.LOG_TAG, "mRecorder reset");
+                mRecorder.release();
+                Log.d(Constants.LOG_TAG, "mRecorder release");
+                mRecorder = null;
+                Log.d(Constants.LOG_TAG, "mRecorder complete");
+//                mCamera.lock();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -182,7 +149,6 @@ public class RecoderVideoTempSource extends KsyMediaSource implements MediaRecor
         } else {
             Log.d(Constants.LOG_TAG, "WTF ?");
         }
-        mLock.release();
     }
 
     @Override
@@ -192,9 +158,43 @@ public class RecoderVideoTempSource extends KsyMediaSource implements MediaRecor
 
     @Override
     public void run() {
-        long before = System.currentTimeMillis();
         prepare();
-        long after = System.currentTimeMillis();
-        Log.d(Constants.LOG_TAG, "set up mp4 config consume time:" + (after - before));
+        File file = null;
+        long startTime = System.currentTimeMillis();
+        if (mRunning) {
+            do {
+                file = new File(path);
+                if (file.exists() && file.length() > (1024 * 50)) {
+                    break;
+                } else {
+                    try {
+                        Thread.sleep(100);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } while (System.currentTimeMillis() - startTime < 5000);
+            release();
+        }
+        if (file != null && file.exists() && file.length() > 0) {
+            if (mRunning) {
+                try {
+                    MP4Config config = new MP4Config(path);
+                    // Delete dummy video
+                    Log.e(Constants.LOG_TAG, "waiting use" + (System.currentTimeMillis() - startTime));
+                    Log.d(Constants.LOG_TAG, "ProfileLevel = " + config.getProfileLevel() + ",B64SPS = " + config.getB64SPS() + ",B64PPS = " + config.getB64PPS());
+                    PrefUtil.saveMp4Config(mContext, config);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (!file.delete()) {
+                    Log.e(Constants.LOG_TAG, "Temp file could not be erased");
+                }
+                mHandler.sendEmptyMessage(Constants.MESSAGE_MP4CONFIG_FINISH);
+            }
+        } else {
+            Log.e(Constants.LOG_TAG, "waiting for temp file failed");
+        }
+        mRunning = false;
     }
 }

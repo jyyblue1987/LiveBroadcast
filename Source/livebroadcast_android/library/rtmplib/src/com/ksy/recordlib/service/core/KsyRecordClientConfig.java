@@ -5,7 +5,9 @@ import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 
 import com.ksy.recordlib.service.exception.KsyRecordException;
+import com.ksy.recordlib.service.util.CameraUtil;
 import com.ksy.recordlib.service.util.Constants;
+import com.ksy.recordlib.service.util.OrientationActivity;
 
 /**
  * Created by eflakemac on 15/6/17.
@@ -19,25 +21,34 @@ public class KsyRecordClientConfig {
     int mVoiceType;
     int mAudioSampleRate;
     int mAudioBitRate;
-    int mAudioEncorder;
+    int mAudioEncoder;
     int mVideoFrameRate;
     int mVideoBitRate;
     int mDropFrameFrequency;
     int mVideoWidth;
-    int mVideoHeigh;
-    int mVideoEncorder;
+    int mVideoHeight;
+    int mVideoEncoder;
     int mVideoProfile;
+    int cameraOriention;
+    public static int recordOrientation;
+    public static int previewOrientation;
 
     String mUrl;
+
+    OrientationActivity orientationActivity;
+
+    public int getRecordOrientation() {
+        return recordOrientation;
+    }
 
     public KsyRecordClientConfig(Builder builder) {
         mCameraType = builder.mCameraType;
         mVoiceType = builder.mVoiceType;
         mAudioSampleRate = builder.mAudioSampleRate;
         mAudioBitRate = builder.mAudioBitRate;
-        mAudioEncorder = builder.mAudioEncorder;
+        mAudioEncoder = builder.mAudioEncorder;
         mDropFrameFrequency = builder.mDropFrameFrequency;
-        mVideoEncorder = builder.mVideoEncorder;
+        mVideoEncoder = builder.mVideoEncorder;
         mVideoProfile = builder.mVideoProfile;
         mUrl = builder.mUrl;
         if (mVideoProfile >= 0) {
@@ -61,13 +72,13 @@ public class KsyRecordClientConfig {
                 this.mVideoFrameRate = camcorderProfile.videoFrameRate;
                 this.mVideoBitRate = camcorderProfile.videoBitRate;
                 this.mVideoWidth = camcorderProfile.videoFrameWidth;
-                this.mVideoHeigh = camcorderProfile.videoFrameHeight;
+                this.mVideoHeight = camcorderProfile.videoFrameHeight;
             }
         }
         mVideoFrameRate = builder.mVideoFrameRate;
         mVideoBitRate = builder.mVideoBitRate;
         mVideoWidth = builder.mVideoWidth > 0 ? builder.mVideoWidth : mVideoWidth;
-        mVideoHeigh = builder.mVideoHeigh > 0 ? builder.mVideoHeigh : mVideoHeigh;
+        mVideoHeight = builder.mVideoHeigh > 0 ? builder.mVideoHeigh : mVideoHeight;
     }
 
     public int getCameraType() {
@@ -86,8 +97,8 @@ public class KsyRecordClientConfig {
         return mAudioBitRate;
     }
 
-    public int getAudioEncorder() {
-        return mAudioEncorder;
+    public int getAudioEncoder() {
+        return mAudioEncoder;
     }
 
     public int getVideoFrameRate() {
@@ -106,12 +117,12 @@ public class KsyRecordClientConfig {
         return mVideoWidth;
     }
 
-    public int getVideoHeigh() {
-        return mVideoHeigh;
+    public int getVideoHeight() {
+        return mVideoHeight;
     }
 
-    public int getVideoEncorder() {
-        return mVideoEncorder;
+    public int getVideoEncoder() {
+        return mVideoEncoder;
     }
 
     public int getVideoProfile() {
@@ -142,8 +153,8 @@ public class KsyRecordClientConfig {
         return this;
     }
 
-    public KsyRecordClientConfig setmAudioEncorder(int mAudioEncorder) {
-        this.mAudioEncorder = mAudioEncorder;
+    public KsyRecordClientConfig setmAudioEncoder(int mAudioEncoder) {
+        this.mAudioEncoder = mAudioEncoder;
         return this;
     }
 
@@ -167,13 +178,13 @@ public class KsyRecordClientConfig {
         return this;
     }
 
-    public KsyRecordClientConfig setmVideoHeigh(int mVideoHeigh) {
-        this.mVideoHeigh = mVideoHeigh;
+    public KsyRecordClientConfig setmVideoHeight(int mVideoHeight) {
+        this.mVideoHeight = mVideoHeight;
         return this;
     }
 
-    public KsyRecordClientConfig setmVideoEncorder(int mVideoEncorder) {
-        this.mVideoEncorder = mVideoEncorder;
+    public KsyRecordClientConfig setmVideoEncoder(int mVideoEncoder) {
+        this.mVideoEncoder = mVideoEncoder;
         return this;
     }
 
@@ -192,6 +203,11 @@ public class KsyRecordClientConfig {
         return true;
     }
 
+    public KsyRecordClientConfig setOrientationActivity(OrientationActivity orientationActivity) {
+        this.orientationActivity = orientationActivity;
+        return this;
+    }
+
     public void configMediaRecorder(MediaRecorder mediaRecorder, int type) {
         if (mediaRecorder == null) {
             throw new IllegalArgumentException("mediaRecorder is null");
@@ -202,9 +218,10 @@ public class KsyRecordClientConfig {
         } else if (type == MEDIA_TEMP) {
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         }
-        mediaRecorder.setVideoEncoder(mVideoEncorder);
+        mediaRecorder.setVideoEncoder(mVideoEncoder);
+        int cameraId = -1;
         if (mVideoProfile >= 0) {
-            int cameraId = -1;
+
             int numberOfCameras = Camera.getNumberOfCameras();
             if (numberOfCameras > 0) {
                 Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
@@ -232,9 +249,16 @@ public class KsyRecordClientConfig {
         if (mVideoFrameRate > 0) {
 //            mediaRecorder.setCaptureRate(24);
         }
-        if (mVideoWidth > 0 && mVideoHeigh > 0) {
-            mediaRecorder.setVideoSize(mVideoWidth, mVideoHeigh);
+        if (mVideoWidth > 0 && mVideoHeight > 0) {
+            mediaRecorder.setVideoSize(mVideoWidth, mVideoHeight);
         }
+        if (orientationActivity != null) {
+            int previewDegree = CameraUtil.getDisplayOrientation(orientationActivity.getActivity(), cameraId, mCameraType == Camera.CameraInfo.CAMERA_FACING_FRONT);
+            recordOrientation = CameraUtil.getMediaRecordRotation(previewDegree, orientationActivity.getOrientation(), mCameraType == Camera.CameraInfo.CAMERA_FACING_FRONT);
+        } else {
+            recordOrientation = 90;
+        }
+        mediaRecorder.setOrientationHint(recordOrientation);
     }
 
     public static class Builder {

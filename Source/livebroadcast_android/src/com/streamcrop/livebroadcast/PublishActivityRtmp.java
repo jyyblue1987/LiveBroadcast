@@ -79,6 +79,9 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
         
         setUpEnvironment();
         setupRecord();
+        
+        recording = true;
+        startStop.setText("Stop");
     }
     
     private void setUpEnvironment() {
@@ -104,21 +107,21 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     {
     	m_lastStop = System.currentTimeMillis();
     	setPreviewState(false);
-    	client.stopPreview();
+    	client.stopRecord();
     	 surfaceview.postDelayed(new Runnable() {
 				
 				@Override
 				public void run() {
 					try {
-						client.startPreview();
+						client.startRecord();
 						m_lastStop = System.currentTimeMillis();
 						setPreviewState(true);
 					} catch (KsyRecordException e) {						
 						e.printStackTrace();
 					}
 			    	
-			    	if( recording == true )
-			    		startRecord();						
+//			    	if( recording == true )
+//			    		startRecord();						
 				}
 			}, 1000);
     }
@@ -178,21 +181,8 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     
     private void onClickCameraSwitch()
     {
-    	if( System.currentTimeMillis() - m_lastStop < GAP )
-    		return;
-    	
-    	
     	try {
-    		int camera = config.getCameraType();
-	    	if( camera == CameraInfo.CAMERA_FACING_BACK)
-	    		config.setmCameraType(CameraInfo.CAMERA_FACING_FRONT);						    		
-	    	else
-	    		config.setmCameraType(CameraInfo.CAMERA_FACING_BACK);
-	    							    	
-	    	client.setConfig(config);
-	    	
-	    	restartRecord();
-           	
+    		client.switchCamera();   		
     	} catch(Exception e){
     		e.printStackTrace();
     	}
@@ -214,7 +204,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     
 	@Override
 	public void onDestroy( ) {
-		client.stopPreview();
+		client.stopRecord();
 		client.release();
 				
 		super.onDestroy();
@@ -228,6 +218,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         surfaceHolder = holder;
+        
         restartRecord(); 
     }
 

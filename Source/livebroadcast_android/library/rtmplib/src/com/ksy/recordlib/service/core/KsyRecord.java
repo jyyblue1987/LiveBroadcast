@@ -3,6 +3,7 @@ package com.ksy.recordlib.service.core;
 import android.view.SurfaceView;
 import android.view.TextureView;
 
+import com.ksy.recordlib.service.data.SenderStatData;
 import com.ksy.recordlib.service.exception.KsyRecordException;
 
 /**
@@ -11,13 +12,18 @@ import com.ksy.recordlib.service.exception.KsyRecordException;
  * Interface provider for app
  */
 public interface KsyRecord {
-	void startPreview() throws KsyRecordException;
     void startRecord() throws KsyRecordException;
 
-    void stopRecord();
-    void stopPreview();
+    /**
+     * stop recorder
+     *
+     * @return true is success
+     */
+    boolean stopRecord();
 
     void release();
+
+    void switchCamera();
 
 //    void setCameraType(int cameraType);
 //
@@ -35,7 +41,13 @@ public interface KsyRecord {
 
 //    void setDropFrameFrequency(int frequency);
 
+    /**
+     * @param surfaceView
+     * @deprecated use {@link KsyRecord#setDisplayPreview(TextureView)} instead avoid preview distortion
+     */
     void setDisplayPreview(SurfaceView surfaceView);
 
     void setDisplayPreview(TextureView textureView);
+
+    SenderStatData getSenderStatData();
 }

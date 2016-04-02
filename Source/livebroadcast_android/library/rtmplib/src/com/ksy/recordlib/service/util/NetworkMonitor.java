@@ -79,4 +79,14 @@ public class NetworkMonitor {
             context.sendBroadcast(intent);
         }
     }
+
+    public interface OnNetworkPoorListener {
+
+        static final int CACHE_QUEUE_MAX = 11;
+        static final int FRAME_SEND_TOO_LONG = 21;
+
+        void onNetworkPoor(int source);
+
+    }
+
 }
