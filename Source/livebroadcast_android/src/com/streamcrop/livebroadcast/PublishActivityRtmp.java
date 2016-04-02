@@ -38,6 +38,10 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     String m_AppName = "hls";
     String m_Channel = "jyy1";
     
+    private boolean m_startPreview = false;
+    private long	m_lastStop = 0;
+    private static final long GAP = 3000;
+    
     public void onCreate(Bundle savedInstanceState) {  
         super.onCreate(savedInstanceState);  
         setContentView(R.layout.layout_publish);
@@ -72,6 +76,8 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
         // We still need this line for backward compatibility reasons with android 2
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         
+        setPreviewState(false);
+        
         setUpEnvironment();
         setupRecord();
     }
@@ -90,20 +96,27 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
         client.setDisplayPreview(surfaceview);        
     }
     
-    private void startPreviewDelay()
+    private void setPreviewState(boolean flag)
     {
-    	client.stopPreview();
-    	restartRecord();    
+    	m_startPreview = flag;
+    	m_btnCameraSwitch.setEnabled(flag);
+    	m_btnCameraSetting.setEnabled(flag);
+    	startStop.setEnabled(flag);
     }
     
     private void restartRecord()
     {
+    	m_lastStop = System.currentTimeMillis();
+    	
+    	setPreviewState(false);
+    	client.stopPreview();
     	 surfaceview.postDelayed(new Runnable() {
 				
 				@Override
 				public void run() {
 					try {
 						client.startPreview();
+						setPreviewState(true);
 					} catch (KsyRecordException e) {						
 						e.printStackTrace();
 					}
@@ -111,7 +124,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
 			    	if( recording == true )
 			    		startRecord();						
 				}
-			}, 500);
+			}, 1000);
     }
     
     private void startRecord() {
@@ -169,10 +182,11 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     
     private void onClickCameraSwitch()
     {
+    	if( System.currentTimeMillis() - m_lastStop < GAP )
+    		return;
+    	
     	try {
-    		client.stopPreview();
-    		
-			int camera = config.getCameraType();
+    		int camera = config.getCameraType();
 	    	if( camera == CameraInfo.CAMERA_FACING_BACK)
 	    		config.setmCameraType(CameraInfo.CAMERA_FACING_FRONT);						    		
 	    	else
@@ -190,6 +204,9 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     
     private void onClickCameraSetting()
     {
+    	if( System.currentTimeMillis() - m_lastStop < GAP )
+    		return;
+    	
     	Intent intent = new Intent(this, SettingActivity.class);
        
         startActivity(intent); 
@@ -214,11 +231,12 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         surfaceHolder = holder;
-        startPreviewDelay();    
+        restartRecord(); 
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-    
+    	int i = 0;
+    	i = 1;
     }
 }  
