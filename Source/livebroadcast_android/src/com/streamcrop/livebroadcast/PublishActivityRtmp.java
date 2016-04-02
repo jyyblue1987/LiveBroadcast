@@ -38,7 +38,6 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     String m_AppName = "hls";
     String m_Channel = "jyy1";
     
-    private boolean m_startPreview = false;
     private long	m_lastStop = 0;
     private static final long GAP = 3000;
     
@@ -98,16 +97,12 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     
     private void setPreviewState(boolean flag)
     {
-    	m_startPreview = flag;
     	m_btnCameraSwitch.setEnabled(flag);
-    	m_btnCameraSetting.setEnabled(flag);
-    	startStop.setEnabled(flag);
     }
     
     private void restartRecord()
     {
     	m_lastStop = System.currentTimeMillis();
-    	
     	setPreviewState(false);
     	client.stopPreview();
     	 surfaceview.postDelayed(new Runnable() {
@@ -116,6 +111,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
 				public void run() {
 					try {
 						client.startPreview();
+						m_lastStop = System.currentTimeMillis();
 						setPreviewState(true);
 					} catch (KsyRecordException e) {						
 						e.printStackTrace();
@@ -185,6 +181,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     	if( System.currentTimeMillis() - m_lastStop < GAP )
     		return;
     	
+    	
     	try {
     		int camera = config.getCameraType();
 	    	if( camera == CameraInfo.CAMERA_FACING_BACK)
@@ -204,7 +201,7 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     
     private void onClickCameraSetting()
     {
-    	if( System.currentTimeMillis() - m_lastStop < GAP )
+    	if( System.currentTimeMillis() - m_lastStop < 500 )
     		return;
     	
     	Intent intent = new Intent(this, SettingActivity.class);
