@@ -45,6 +45,10 @@ public class SettingActivity extends Activity {
     
     private void initData()
     {
+    	((TextView) findViewById(R.id.fragment_videosize).findViewById(R.id.txt_title)).setText("Camera Size");
+    	((TextView) findViewById(R.id.fragment_videobitrate).findViewById(R.id.txt_title)).setText("Video Bitrate");
+    	((TextView) findViewById(R.id.fragment_audiobitrate).findViewById(R.id.txt_title)).setText("Audio Bitrate");
+    	
     	client = KsyRecordClient.getInstance(getApplicationContext());
     	config = KsyRecordClient.getConfig();
     	
