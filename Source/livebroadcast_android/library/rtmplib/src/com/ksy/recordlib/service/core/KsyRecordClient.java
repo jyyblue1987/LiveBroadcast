@@ -1,18 +1,8 @@
 package com.ksy.recordlib.service.core;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.hardware.Camera;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.os.Handler;
-import android.os.Message;
-import android.util.Log;
-import android.view.SurfaceView;
-import android.view.TextureView;
-import android.view.View;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.ksy.recordlib.service.data.SenderStatData;
 import com.ksy.recordlib.service.exception.KsyRecordException;
@@ -27,8 +17,19 @@ import com.ksy.recordlib.service.util.OnClientErrorListener;
 import com.ksy.recordlib.service.util.OrientationActivity;
 import com.ksy.recordlib.service.view.CameraTextureView;
 
-import java.io.IOException;
-import java.util.List;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.hardware.Camera;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Handler;
+import android.os.Message;
+import android.util.Log;
+import android.view.SurfaceView;
+import android.view.TextureView;
+import android.view.View;
 
 /**
  * Created by eflakemac on 15/6/17.
@@ -347,8 +348,9 @@ public class KsyRecordClient implements KsyRecord, OnClientErrorListener {
         return CAMEAR_NO_FLASH;
     }
 
+    public static List<Camera.Size> sizeList = new ArrayList<Camera.Size>();
     private Camera.Size findBestPreviewSize(Camera mCamera, View view) {
-        List<Camera.Size> sizeList = mCamera.getParameters().getSupportedPreviewSizes();
+    	sizeList = mCamera.getParameters().getSupportedPreviewSizes();
         if (sizeList == null || sizeList.isEmpty()) {
             return null;
         }

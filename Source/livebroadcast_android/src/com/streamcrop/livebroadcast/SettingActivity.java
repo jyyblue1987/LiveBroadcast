@@ -56,13 +56,13 @@ public class SettingActivity extends Activity {
     	m_txtVideoBitRate.setText("" + (config.getVideoBitRate() / 1000) + "Kbps");
     	m_txtAudioBitRate.setText("" + (config.getAudioBitRate() / 1000) + "Kbps");
     	
-//    	try {
-//    		for (Camera.Size size : KsyRecordClient.mSupportedPreviewSizes) {
-//        		camerasize.add(size);
-//    	    }        	
-//    	} catch(Exception e) {
-//    		e.printStackTrace();
-//    	}
+    	try {
+    		for (Camera.Size size : KsyRecordClient.sizeList) {
+        		camerasize.add(size);
+    	    }        	
+    	} catch(Exception e) {
+    		e.printStackTrace();
+    	}
     	
     }
     
@@ -105,8 +105,8 @@ public class SettingActivity extends Activity {
 		
 		dialog.setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener() {			
 			public void onClick(DialogInterface dialog, int whichButton) {
-//				config.setmVideoWidth(camerasize.get(whichButton).width);
-//				config.setmVideoHeigh(camerasize.get(whichButton).height);
+				config.setmVideoWidth(camerasize.get(whichButton).width);
+				config.setmVideoHeight(camerasize.get(whichButton).height);
 				
 				m_txtResolution.setText(camerasize.get(whichButton).width + "x" + camerasize.get(whichButton).height);
 				
