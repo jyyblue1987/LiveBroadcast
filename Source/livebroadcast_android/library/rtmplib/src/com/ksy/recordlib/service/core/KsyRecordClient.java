@@ -227,15 +227,17 @@ public class KsyRecordClient implements KsyRecord, OnClientErrorListener {
                     *
                     * Ks3 Record API
                     * */
+    
     @Override
-    public void startRecord() throws KsyRecordException {
-        if (clientState == STATE.RECORDING) {
+    public void startPreview() throws KsyRecordException {
+    	if (clientState == STATE.RECORDING) {
             return;
         }
         startTime = System.currentTimeMillis();
         mEncodeMode = judgeEncodeMode(mContext);
         try {
             mConfig.setOrientationActivity(orientationActivity);
+            ksyRecordSender.m_isPublish = true;
             ksyRecordSender.setInputUrl(mConfig.getUrl());
             ksyRecordSender.start(mContext);
         } catch (IOException e) {
@@ -248,12 +250,17 @@ public class KsyRecordClient implements KsyRecord, OnClientErrorListener {
             if (mEncodeMode == Constants.ENCODE_MODE_MEDIA_RECORDER) {
                 setUpMp4Config(mRecordHandler);
             } else {
-//                startRecordStep();
+                startRecordStep();
             }
         } else {
             throw new KsyRecordException("Check KsyRecordClient Configuration, param should be correct");
         }
         clientState = STATE.RECORDING;
+    }
+    @Override
+    public void startRecord() throws KsyRecordException {
+    	if( ksyRecordSender != null )
+    		ksyRecordSender.m_isPublish = true;
     }
 
     private void startRecordStep() {
@@ -481,7 +488,14 @@ public class KsyRecordClient implements KsyRecord, OnClientErrorListener {
 
     @Override
     public boolean stopRecord() {
-        if (clientState != STATE.RECORDING) {
+       	if( ksyRecordSender != null )
+    		ksyRecordSender.m_isPublish = false;
+       	return true;
+    }
+    
+    @Override
+    public boolean stopPreview() {
+    	if (clientState != STATE.RECORDING) {
             return false;
         }
         if (mVideoSource != null) {

@@ -79,9 +79,6 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
         
         setUpEnvironment();
         setupRecord();
-        
-        recording = true;
-        startStop.setText("Stop");
     }
     
     private void setUpEnvironment() {
@@ -107,21 +104,22 @@ public class PublishActivityRtmp extends Activity implements SurfaceHolder.Callb
     {
     	m_lastStop = System.currentTimeMillis();
     	setPreviewState(false);
-    	client.stopRecord();
-    	 surfaceview.postDelayed(new Runnable() {
+    	client.stopPreview();
+    	surfaceview.postDelayed(new Runnable() {
 				
 				@Override
 				public void run() {
 					try {
-						client.startRecord();
+						client.startPreview();
 						m_lastStop = System.currentTimeMillis();
 						setPreviewState(true);
+						
+						if( recording == false )
+							client.stopRecord();						
 					} catch (KsyRecordException e) {						
 						e.printStackTrace();
 					}
-			    	
-//			    	if( recording == true )
-//			    		startRecord();						
+					
 				}
 			}, 1000);
     }

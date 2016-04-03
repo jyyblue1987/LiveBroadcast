@@ -12,6 +12,7 @@ import com.ksy.recordlib.service.exception.KsyRecordException;
  * Interface provider for app
  */
 public interface KsyRecord {
+	void startPreview() throws KsyRecordException;
     void startRecord() throws KsyRecordException;
 
     /**
@@ -20,7 +21,8 @@ public interface KsyRecord {
      * @return true is success
      */
     boolean stopRecord();
-
+    boolean stopPreview();
+    
     void release();
 
     void switchCamera();

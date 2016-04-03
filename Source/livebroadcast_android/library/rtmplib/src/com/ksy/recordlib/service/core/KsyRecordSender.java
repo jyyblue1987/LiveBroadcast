@@ -65,6 +65,8 @@ public class KsyRecordSender {
     private Speedometer audioFps = new Speedometer();
     private long lastPoorNotificationTime = 0;
     private String inputUrl = "";
+    
+    public boolean	m_isPublish = false;
 
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -129,7 +131,7 @@ public class KsyRecordSender {
 
     private void cycle() throws InterruptedException {
         while (!Thread.interrupted()) {
-            while (!connected) {
+            while (!connected || m_isPublish == false ) {
                 Thread.sleep(10);
             }
             if (statData.frame_video > statData.MIN_QUEUE_BUFFER && statData.frame_audio > statData.MIN_QUEUE_BUFFER || recordPQueue.size() > 30) {
